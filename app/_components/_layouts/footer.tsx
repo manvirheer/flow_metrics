@@ -9,7 +9,7 @@ export default function Footer() {
 
   return (
     <footer className="bg-white border-t">
-      <div className="mx-auto max-w-7xl px-4 py-4 sm:py-4 lg:px-2">
+      <div className="mx-auto max-w-7xl px-2 py-4 sm:py-4 lg:px-2">
         <div className="flex flex-col items-center justify-between space-y-4 sm:flex-row sm:space-y-0">
           {/* Company Info */}
           <div className="text-center sm:text-left">
@@ -20,8 +20,8 @@ export default function Footer() {
                   className="h-14 w-auto mx-auto sm:mx-0"
                 />
             </Link> */}
-            <div className="flex items-center justify-center sm:justify-start text-sm text-gray-500">
-              <MapPinIcon className="h-5 w-5 text-gray-400 mr-2" />
+            <div className="flex items-center justify-center px-2 sm:justify-start text-sm text-gray-500">
+              <MapPinIcon className="h-5 w-5 text-gray-400 " />
               <span>A2P Energy LTD., SCO No 13, Airport Road, opposite Sector 82, JLPL Industrial Area, Sahibzada Ajit Singh Nagar, Punjab 140306</span>
             </div>
           </div>

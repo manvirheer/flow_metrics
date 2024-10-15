@@ -106,18 +106,28 @@ export default function Home() {
   const currentMetricsData = performanceMetricsData[metricsTimeframe as keyof typeof performanceMetricsData];
 
   return (
-    <div className="grid bg-gray-100 grid-rows-[auto_1fr_auto] items-start justify-items-center min-h-screen pb-20 gap-16 sm:p-20 text-gray-900 font-sans">
+    <div className="grid bg-gray-100 grid-rows-[auto_1fr_auto] items-start justify-items-center min-h-screen pb-10 gap-16 p-4 max-sm:p-16 text-gray-900 font-sans">
       {/* Header Section */}
-      <header className="w-full flex items-center justify-start p-2">
-        <div>
-          <h1 className="text-5xl font-extrabold tracking-tight text-gray-800 border-b-4 border-blue-600 pb-2" style={{ boxShadow: '0 4px 4px -2px rgba(0, 0, 0, 0.3)' }}>
-            Plant Dashboard
+      <header className="w-full flex items-center justify-between p-2">
+        <div className="flex flex-col">
+          <h1
+            className="text-xl font-bold tracking-tight text-gray-800 border-b-4 border-blue-600 pb-2"
+            style={{ boxShadow: '0 4px 4px -4px rgba(0, 0, 0, 0.3)' }}
+          >
+            Dashboard
           </h1>
-          <p className="mt-2 text-lg text-gray-600">
-            A complete overview of boiler operations at the plant.
+          <p className="mt-2 text-md text-gray-600">
+            Overview of boiler operations at the plant
           </p>
         </div>
+
+        <div className="flex bg-blue-600 text-white p-4 rounded-lg shadow-md items-center hover:bg-blue-700 cursor-pointer">
+          <div className="text-right">
+            <p className="text-md font-sans"><span className='font-semibold'>Current Plant: </span>Mars Wrigley</p>
+          </div>
+        </div>
       </header>
+
 
 
       {/* Main Stats and Charts Section */}
@@ -148,7 +158,7 @@ export default function Home() {
               <Tooltip contentStyle={{ backgroundColor: '#fff', border: '1px solid #e5e7eb', borderRadius: '8px' }} />
               <Legend verticalAlign="top" align="right" iconType="circle" />
               <Line type="monotone" dataKey="fuel" stroke="#007BFF" strokeWidth={3} dot={{ r: 5 }} name="Fuel Consumption" />
-              <Line type="monotone" dataKey="briquettes" stroke="#FFC107" strokeWidth={3} dot={{ r: 5 }} name="Briquettes In Stock" />
+              <Line type="monotone" dataKey="briquettes" stroke="#f07167" strokeWidth={3} dot={{ r: 5 }} name="Briquettes In Stock" />
               <Line type="monotone" dataKey="steam" stroke="#28A745" strokeWidth={3} dot={{ r: 5 }} name="Steam Generation" />
             </LineChart>
           </ResponsiveContainer>
