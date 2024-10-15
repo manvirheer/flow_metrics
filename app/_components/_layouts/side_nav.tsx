@@ -1,21 +1,22 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useMemo } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
   HomeIcon,
   ChartBarIcon,
-  Cog6ToothIcon,
+  CogIcon,
   CalendarIcon,
   UsersIcon,
   FireIcon,
   CubeIcon,
   ClipboardDocumentListIcon,
   TruckIcon,
+  ChevronDoubleRightIcon,
+  ChevronDoubleLeftIcon,
+  ChevronDownIcon,
 } from '@heroicons/react/24/outline';
-import { Disclosure, DisclosureButton, DisclosurePanel } from '@headlessui/react';
-import { ChevronDownIcon } from '@heroicons/react/20/solid';
 
 const navItems = [
   { name: 'Dashboard', path: '/dashboard/plant', icon: HomeIcon },
@@ -31,109 +32,161 @@ const navItems = [
       { name: 'Inventory', path: '/logbooks/inventory', icon: CubeIcon },
     ],
   },
-  { name: 'Settings', path: '/settings', icon: Cog6ToothIcon },
+  { name: 'Settings', path: '/settings', icon: CogIcon },
 ];
 
 const Sidebar: React.FC = () => {
   const pathname = usePathname();
+  const [isCollapsed, setIsCollapsed] = useState(false);
+  const [openSubmenu, setOpenSubmenu] = useState<string | null>(null);
+
+  const memoizedNavItems = useMemo(() => navItems, []);
+
+  const toggleCollapse = () => setIsCollapsed((prev) => !prev);
+
+  const toggleSubmenu = (name: string) => {
+    setOpenSubmenu((prev) => (prev === name ? null : name));
+  };
+
+  const NavLink = ({ item, isActive }: { item: any; isActive: boolean }) => {
+    const Icon = item.icon;
+    return (
+      <Link
+        href={item.path}
+        className={`group flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors duration-200 ${
+          isActive ? 'bg-gray-700 text-white' : 'text-gray-300 hover:bg-gray-700 hover:text-white'
+        }`}
+      >
+        <div className="flex items-center">
+          <Icon className="h-6 w-6 text-gray-400 group-hover:text-white flex-shrink-0" aria-hidden="true" />
+          <span
+            className={`ml-3 whitespace-nowrap transition-all duration-300 ${
+              isCollapsed ? 'opacity-0 w-0 overflow-hidden' : 'opacity-100 w-auto'
+            }`}
+          >
+            {item.name}
+          </span>
+        </div>
+      </Link>
+    );
+  };
+
+  const SubNavLink = ({ subItem, isSubActive }: { subItem: any; isSubActive: boolean }) => {
+    const SubIcon = subItem.icon;
+    return (
+      <Link
+        key={subItem.name}
+        href={subItem.path}
+        className={`group flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors duration-200 ${
+          isSubActive ? 'bg-gray-700 text-white' : 'text-gray-300 hover:bg-gray-700 hover:text-white'
+        }`}
+      >
+        <div className="flex items-center">
+          <SubIcon className="h-6 w-6 text-gray-400 group-hover:text-white flex-shrink-0" aria-hidden="true" />
+          <span
+            className={`ml-3 whitespace-nowrap transition-all duration-300 ${
+              isCollapsed ? 'opacity-0 w-0 overflow-hidden' : 'opacity-100 w-auto'
+            }`}
+          >
+            {subItem.name}
+          </span>
+        </div>
+      </Link>
+    );
+  };
 
   return (
-    <aside className="w-64 min-h-full bg-gray-900 text-white flex flex-col max-sm:hidden  rounded-tr-xl rounded-br-xl ">
+    <aside
+      className={`${
+        isCollapsed ? 'w-20' : 'w-64'
+      } bg-gray-900 text-white flex flex-col transition-all duration-300`}
+    >
       {/* Sidebar Header */}
-      <div className="w-full p-6 h-32 flex flex-col items-center justify-center border-b border-gray-700">
+      <div
+        className={`p-6 h-32 flex flex-col items-center justify-center border-b border-gray-700 transition-all duration-300 ${
+          isCollapsed ? 'space-y-0' : 'space-y-2'
+        }`}
+      >
         <a href="#" className="flex items-center justify-center">
           <img
             alt="A2P Energy"
             src="https://marketplace.cleanenergytrade.com/assets/img/a2p-red.png"
-            className="h-20 w-20"
+            className={`h-20 w-20 transition-all duration-300 ${
+              isCollapsed ? 'opacity-0 scale-1000' : 'opacity-100 scale-100'
+            }`}
           />
         </a>
-        <span className="mt-2 text-xl font-sans font-medium">Flow Metrics</span>
+        <span
+          className={`text-xl font-sans font-medium transition-all duration-100 ${
+            isCollapsed ? 'opacity-0 scale-50 ' : 'opacity-100 scale-100'
+          }`}
+        >
+          Flow Metrics
+        </span>
       </div>
 
       {/* Navigation */}
       <nav className="flex-1 mt-4 px-2 space-y-1">
-        {navItems.map((item) => {
+        {memoizedNavItems.map((item) => {
           const isActive = pathname === item.path;
-          const Icon = item.icon;
 
-          // If the item has children, render it as a Disclosure
           if (item.children) {
+            const isSubmenuOpen = openSubmenu === item.name;
             return (
-              <Disclosure key={item.name}>
-                {({ open }) => (
-                  <>
-                    <DisclosureButton
-                      className="flex items-center justify-between w-full px-3 py-2 text-sm font-medium text-gray-300 rounded-md hover:bg-gray-700 hover:text-white transition-colors duration-200"
+              <div key={item.name}>
+                <button
+                  onClick={() => toggleSubmenu(item.name)}
+                  className="flex items-center justify-between w-full px-3 py-2 text-sm font-medium text-gray-300 rounded-md hover:bg-gray-700 hover:text-white transition-colors duration-200"
+                >
+                  <div className="flex items-center">
+                    <item.icon className="h-6 w-6 text-gray-400 flex-shrink-0" aria-hidden="true" />
+                    <span
+                      className={`ml-3 whitespace-nowrap transition-all duration-300 ${
+                        isCollapsed ? 'opacity-0 w-0 overflow-hidden' : 'opacity-100 w-auto'
+                      }`}
                     >
-                      <div className="flex items-center">
-                        <Icon className="mr-3 h-6 w-6 text-gray-400" aria-hidden="true" />
-                        {item.name}
-                      </div>
-                      <ChevronDownIcon
-                        className={`h-5 w-5 transition-transform ${
-                          open ? 'transform rotate-180' : ''
-                        }`}
-                        aria-hidden="true"
+                      {item.name}
+                    </span>
+                  </div>
+                  <ChevronDownIcon
+                    className={`h-6 w-6 transition-transform ${
+                      isSubmenuOpen ? 'rotate-180' : ''
+                    }`}
+                    aria-hidden="true"
+                  />
+                </button>
+                {isSubmenuOpen && (
+                  <div className="pl-6 space-y-1">
+                    {item.children.map((subItem) => (
+                      <SubNavLink
+                        key={subItem.name}
+                        subItem={subItem}
+                        isSubActive={pathname === subItem.path}
                       />
-                    </DisclosureButton>
-                    <DisclosurePanel className="pl-6">
-                      <div className="space-y-1">
-                        {item.children.map((subItem) => {
-                          const isSubActive = pathname === subItem.path;
-                          const SubIcon = subItem.icon;
-                          return (
-                            <Link
-                              key={subItem.name}
-                              href={subItem.path}
-                              className={`group flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors duration-200 ${
-                                isSubActive
-                                  ? 'bg-gray-700 text-white'
-                                  : 'text-gray-300 hover:bg-gray-700 hover:text-white'
-                              }`}
-                            >
-                              <SubIcon
-                                className={`mr-3 h-6 w-6 ${
-                                  isSubActive
-                                    ? 'text-white'
-                                    : 'text-gray-400 group-hover:text-white'
-                                }`}
-                                aria-hidden="true"
-                              />
-                              {subItem.name}
-                            </Link>
-                          );
-                        })}
-                      </div>
-                    </DisclosurePanel>
-                  </>
+                    ))}
+                  </div>
                 )}
-              </Disclosure>
+              </div>
             );
           }
 
-          // Regular navigation items without children
-          return (
-            <Link
-              key={item.name}
-              href={item.path}
-              className={`group flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors duration-200 ${
-                isActive
-                  ? 'bg-gray-700 text-white'
-                  : 'text-gray-300 hover:bg-gray-700 hover:text-white'
-              }`}
-            >
-              <Icon
-                className={`mr-3 h-6 w-6 ${
-                  isActive ? 'text-white' : 'text-gray-400 group-hover:text-white'
-                }`}
-                aria-hidden="true"
-              />
-              {item.name}
-            </Link>
-          );
+          return <NavLink key={item.name} item={item} isActive={isActive} />;
         })}
       </nav>
+
+      {/* Toggle Button at Bottom Center */}
+      <div className="mt-auto mb-4 flex justify-center">
+        <button
+          onClick={toggleCollapse}
+          className="p-2 text-gray-400 hover:text-white transition-colors duration-200"
+        >
+          {isCollapsed ? (
+            <ChevronDoubleRightIcon className="h-6 w-6" aria-hidden="true" />
+          ) : (
+            <ChevronDoubleLeftIcon className="h-6 w-6" aria-hidden="true" />
+          )}
+        </button>
+      </div>
     </aside>
   );
 };

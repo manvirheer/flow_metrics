@@ -1,3 +1,5 @@
+// Layout.tsx
+
 import React from 'react';
 import Header from './header';
 import Sidebar from './side_nav';
@@ -9,21 +11,17 @@ interface MainLayoutProps {
 
 const Layout: React.FC<MainLayoutProps> = ({ children }) => {
   return (
-    <div className="flex h-screen">
+    <div className="flex h-screen overflow-hidden">
       {/* Sidebar - Fixed on the left side */}
-      <div className="w-60 h-screen fixed bg-gray-900">
-        <Sidebar />
-      </div>
+      <Sidebar />
 
       {/* Main Content Area */}
-      <div className="flex flex-col flex-1 ml-60 overflow-y-auto">
+      <div className="flex flex-1 flex-col overflow-y-auto transition-all duration-300">
         {/* Header */}
         <Header />
 
         {/* Main Content */}
-        <main className="flex-1 bg-gray-100 p-4">
-          {children}
-        </main>
+        <main className="flex-1 bg-gray-100 p-4">{children}</main>
 
         {/* Footer */}
         <Footer />
@@ -32,4 +30,4 @@ const Layout: React.FC<MainLayoutProps> = ({ children }) => {
   );
 };
 
-export default Layout;
+export default React.memo(Layout);
