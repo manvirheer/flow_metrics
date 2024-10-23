@@ -1,12 +1,15 @@
-'use client'
+// app/_components/_elements/header.tsx
+'use client';
 
-import { useState } from 'react'
-import { Dialog, DialogPanel, Transition } from '@headlessui/react'
-import { Bars3Icon, XMarkIcon } from '@heroicons/react/24/outline'
-import Link from 'next/link'
+import React, { useContext } from 'react';
+import { AuthContext } from '../../_contexts/AuthContext';
+import { Dialog, DialogPanel, Transition } from '@headlessui/react';
+import { Bars3Icon, XMarkIcon } from '@heroicons/react/24/outline';
+import Link from 'next/link';
 
 export default function Header() {
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const { logout, user } = useContext(AuthContext);
+  const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false);
 
   return (
     <header className="bg-white">
@@ -16,7 +19,7 @@ export default function Header() {
       >
         <div className="flex lg:flex-1 items-center space-x-4">
           <span className="text-lg text-gray-800 font-semibold px-2">
-            Welcome Back, Manvir
+            Welcome Back, {user?.name || 'User'}
           </span>
         </div>
 
@@ -32,9 +35,12 @@ export default function Header() {
         </div>
 
         <div className="hidden lg:flex lg:flex-1 lg:justify-end">
-          <a href="#" className="text-sm font-semibold leading-6 text-gray-900">
+          <button
+            onClick={logout}
+            className="text-sm font-semibold leading-6 text-gray-900 hover:text-gray-700"
+          >
             Log Out <span aria-hidden="true">&rarr;</span>
-          </a>
+          </button>
         </div>
       </nav>
 
@@ -45,7 +51,7 @@ export default function Header() {
           onClose={() => setMobileMenuOpen(false)}
         >
           <div className="fixed inset-0 z-10 bg-black bg-opacity-25" />
-          <DialogPanel className="fixed inset-y-0 right-0 z-20 w-full overflow-y-auto bg-white px-6 py-6 sm:max-w-sm sm:ring-1 sm:ring-gray-900/10">
+          <Dialog.Panel className="fixed inset-y-0 right-0 z-20 w-full overflow-y-auto bg-white px-6 py-6 sm:max-w-sm sm:ring-1 sm:ring-gray-900/10">
             <div className="flex items-center justify-between">
               <Link href="#" className="-m-1.5 p-1.5">
                 <span className="sr-only">A2P Energy</span>
@@ -85,11 +91,19 @@ export default function Header() {
                     Inventory
                   </Link>
                 </div>
+                <div className="py-6">
+                  <button
+                    onClick={logout}
+                    className="w-full text-left text-sm font-semibold leading-6 text-gray-900 hover:text-gray-700"
+                  >
+                    Log Out
+                  </button>
+                </div>
               </div>
             </div>
-          </DialogPanel>
+          </Dialog.Panel>
         </Dialog>
       </Transition>
     </header>
-  )
+  );
 }

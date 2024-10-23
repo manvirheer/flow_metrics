@@ -129,7 +129,7 @@ const Sidebar: React.FC = () => {
       <nav className="flex-1 mt-4 px-2 space-y-1">
         {memoizedNavItems.map((item) => {
           const isActive = pathname === item.path;
-
+          
           if (item.children) {
             const isSubmenuOpen = openSubmenu === item.name;
             return (

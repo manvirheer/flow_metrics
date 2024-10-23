@@ -6,15 +6,17 @@ import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   Legend
 } from 'recharts';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import api from '../../_utils/axios';
 
 export default function Home() {
 
   const COLORS = ['#007BFF', '#28A745', '#FFC107'];
 
   // Data for main line graph
-  const [timeframe, setTimeframe] = useState('Monthly');
-  const lineGraphData = {
+  const [timeframe, setTimeframe] = useState<'Today' | 'Monthly' | 'Yearly'>('Monthly');
+
+  const lineGraphData: Record<'Today' | 'Monthly' | 'Yearly', Array<{ name: string; fuel: number; briquettes: number; steam: number }>> = {
     Today: [
       { name: '06:00', fuel: 90, briquettes: 140, steam: 85 },
       { name: '14:00', fuel: 80, briquettes: 145, steam: 75 },
@@ -42,11 +44,17 @@ export default function Home() {
     ],
   };
 
-  const currentData = lineGraphData[timeframe as keyof typeof lineGraphData];
+  const currentData = lineGraphData[timeframe];
+  console.log('Current Data:', currentData); // Debugging line
 
   // Example data for shift information
   const currentShift = 'A';
-  const shiftDetails = {
+  const shiftDetails: Record<string, {
+    startTime: string;
+    endTime: string;
+    employees: Array<{ id: string; name: string; class: string }>;
+    shipments: number;
+  }> = {
     A: {
       startTime: '06:00',
       endTime: '14:00',
@@ -77,12 +85,13 @@ export default function Home() {
   };
 
   const shiftData = shiftDetails[currentShift];
+  console.log('Shift Data:', shiftData); // Debugging line
 
   // State for performance metrics card
-  const [metricsTimeframe, setMetricsTimeframe] = useState('Daily');
+  const [metricsTimeframe, setMetricsTimeframe] = useState<'Daily' | 'Weekly' | 'Yearly'>('Daily');
 
   // Example data for the performance metrics
-  const performanceMetricsData = {
+  const performanceMetricsData: Record<'Daily' | 'Weekly' | 'Yearly', Array<{ metric: string; value: string; change: string }>> = {
     Daily: [
       { metric: 'Average Incoming Stock GCV', value: '4,200 Kcal/Kg', change: '+3%' },
       { metric: 'Ash Dispatched', value: '1,500 Kg', change: '-1%' },
@@ -103,7 +112,8 @@ export default function Home() {
     ],
   };
 
-  const currentMetricsData = performanceMetricsData[metricsTimeframe as keyof typeof performanceMetricsData];
+  const currentMetricsData = performanceMetricsData[metricsTimeframe];
+  console.log('Current Metrics Data:', currentMetricsData); // Debugging line
 
   return (
     <div className="grid bg-gray-100 grid-rows-[auto_1fr_auto] items-start justify-items-center min-h-screen pb-10 gap-16 p-4 max-sm:p-16 text-gray-900 font-sans">
@@ -138,7 +148,7 @@ export default function Home() {
             <h2 className="text-2xl font-semibold">Fuel, Briquettes, and Steam Metrics (Metric Tonnes)</h2>
             <select
               value={timeframe}
-              onChange={(e) => setTimeframe(e.target.value)}
+              onChange={(e) => setTimeframe(e.target.value as 'Today' | 'Monthly' | 'Yearly')}
               className="border border-gray-300 rounded-md p-2 text-gray-700"
             >
               <option value="Today">Today</option>
@@ -197,7 +207,7 @@ export default function Home() {
             <h3 className="text-lg font-semibold">Metrics Overview</h3>
             <select
               value={metricsTimeframe}
-              onChange={(e) => setMetricsTimeframe(e.target.value)}
+              onChange={(e) => setMetricsTimeframe(e.target.value as 'Daily' | 'Weekly' | 'Yearly')}
               className="border border-gray-300 rounded-md p-2 text-gray-700"
             >
               <option value="Daily">Daily</option>

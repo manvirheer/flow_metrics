@@ -1,9 +1,9 @@
 // Layout.tsx
 
 import React from 'react';
-import Header from './header';
-import Sidebar from './side_nav';
-import Footer from './footer';
+import Header from '../_elements/header';
+import Sidebar from '../_elements/side_nav';
+import Footer from '../_elements/footer';
 
 interface MainLayoutProps {
   children: React.ReactNode;
