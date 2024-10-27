@@ -1,6 +1,7 @@
 import './globals.css';
 import React from 'react';
 import AuthProviderWrapper from './_components/AuthProviderWrapper';
+import { PlantProvider } from './_contexts/PlantContext';
 
 
 export const metadata = {
@@ -11,15 +12,14 @@ export const metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <AuthProviderWrapper>
-    <html lang="en">
-      <body className="flex flex-col min-h-screen">
-        {/* Main Content */}
-        <div className="flex-1">{children}</div>
-
-    
-      </body>
-    </html>
+      <PlantProvider>
+        <html lang="en">
+          <body className="flex flex-col min-h-screen">
+            {/* Main Content */}
+            <div className="flex-1">{children}</div>
+          </body>
+        </html>
+      </PlantProvider>
     </AuthProviderWrapper>
-   
   );
 }

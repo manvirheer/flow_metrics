@@ -6,28 +6,29 @@ import Link from 'next/link';
 import { AuthContext } from '../_contexts/AuthContext';
 
 export default function LoginPage() {
-    const { login } = useContext(AuthContext);
+    const { login, error } = useContext(AuthContext); // Access error from AuthContext
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
-    const [error, setError] = useState('');
     const [isLoading, setIsLoading] = useState(false);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setIsLoading(true);
-        setError('');
 
         if (!email || !password) {
-            setError('Please fill in all fields.');
             setIsLoading(false);
             return;
         }
+
 
         try {
             await login(email, password);
             // Redirection is handled within the AuthContext's login function
         } catch (err: any) {
-            setError(err.response?.data?.message || 'Invalid credentials');
+            setEmail('');
+            setPassword('');
+            setIsLoading(false);
+        } finally {
             setIsLoading(false);
         }
     };

@@ -131,11 +131,6 @@ export default function Home() {
           </p>
         </div>
 
-        <div className="flex bg-blue-600 text-white p-4 rounded-lg shadow-md items-center hover:bg-blue-700 cursor-pointer">
-          <div className="text-right">
-            <p className="text-md font-sans"><span className='font-semibold'>Current Plant: </span>Mars Wrigley</p>
-          </div>
-        </div>
       </header>
 
 

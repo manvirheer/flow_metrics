@@ -1,109 +1,94 @@
-// app/_components/_elements/header.tsx
 'use client';
 
-import React, { useContext } from 'react';
+import React, { useContext, useState, Fragment } from 'react';
 import { AuthContext } from '../../_contexts/AuthContext';
-import { Dialog, DialogPanel, Transition } from '@headlessui/react';
-import { Bars3Icon, XMarkIcon } from '@heroicons/react/24/outline';
+import { PlantContext } from '../../_contexts/PlantContext';
+import { Dialog, Transition, Listbox } from '@headlessui/react';
+import {
+  Bars3Icon,
+  XMarkIcon,
+  CheckIcon,
+  ChevronUpDownIcon,
+} from '@heroicons/react/24/outline';
 import Link from 'next/link';
 
 export default function Header() {
   const { logout, user } = useContext(AuthContext);
-  const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false);
+  const { plants, selectedPlant, setSelectedPlant } = useContext(PlantContext);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   return (
-    <header className="bg-white">
-      <nav
-        aria-label="Global"
-        className="mx-auto flex max-w-7xl items-center justify-between p-4 lg:px-8"
+  // Updated JSX Structure
+<header className="bg-white">
+  <nav aria-label="Global" className="mx-auto flex max-w-7xl items-center p-4 lg:px-8">
+    <div className="flex lg:flex-1 items-center space-x-4">
+      <span className="text-lg text-gray-800 font-semibold px-2">
+        Welcome Back, {user?.name || 'User'}
+      </span>
+    </div>
+
+    {/* Right-aligned container for plant selection and logout and always show on top of every other element*/}
+    <div className="flex items-center space-x-4 lg:flex-1 lg:justify-end z-10">
+      {/* Plant Selection Dropdown */}
+      <div className="relative min-w-44">
+        <Listbox value={selectedPlant} onChange={setSelectedPlant}>
+          <div className="relative mt-1">
+            <Listbox.Button className="relative w-full cursor-default rounded-lg bg-blue-600 text-white py-2 pl-3 pr-10 text-left shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-opacity-75 focus-visible:ring-offset-2 focus-visible:ring-offset-blue-600 sm:text-sm">
+              <span className="block truncate">
+                {selectedPlant?.plantName || 'Select Plant'}
+              </span>
+              <span className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2">
+                <ChevronUpDownIcon className="h-5 w-5 text-white" aria-hidden="true" />
+              </span>
+            </Listbox.Button>
+            <Transition
+              as={Fragment}
+              leave="transition ease-in duration-100"
+              leaveFrom="opacity-100"
+              leaveTo="opacity-0"
+            >
+              <Listbox.Options className="absolute mt-1 max-h-60 w-full overflow-auto rounded-md bg-white py-1 text-base shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none sm:text-sm">
+                {plants.map((plant) => (
+                  <Listbox.Option
+                    title={plant.plantName}
+                    key={plant.plantId}
+                    className={({ active }) =>
+                      `relative cursor-default select-none py-2 pl-10 pr-4 ${
+                        active ? 'bg-blue-100 text-blue-900' : 'text-gray-900'
+                      }`
+                    }
+                    value={plant}
+                  >
+                    {({ selected }) => (
+                      <>
+                        <span className={`block truncate ${selected ? 'font-medium' : 'font-normal'}`}>
+                          {plant.plantName}
+                        </span>
+                        {selected ? (
+                          <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-blue-600">
+                            <CheckIcon className="h-5 w-5" aria-hidden="true" />
+                          </span>
+                        ) : null}
+                      </>
+                    )}
+                  </Listbox.Option>
+                ))}
+              </Listbox.Options>
+            </Transition>
+          </div>
+        </Listbox>
+      </div>
+
+      {/* Log Out button */}
+      <button
+        onClick={logout}
+        className="text-sm font-semibold leading-6 text-gray-900 hover:text-gray-700"
       >
-        <div className="flex lg:flex-1 items-center space-x-4">
-          <span className="text-lg text-gray-800 font-semibold px-2">
-            Welcome Back, {user?.name || 'User'}
-          </span>
-        </div>
+        Log Out <span aria-hidden="true">&rarr;</span>
+      </button>
+    </div>
+  </nav>
+</header>
 
-        <div className="flex lg:hidden">
-          <button
-            type="button"
-            onClick={() => setMobileMenuOpen(true)}
-            className="-m-2.5 inline-flex items-center justify-center rounded-md p-2.5 text-gray-700"
-            aria-label="Open main menu"
-          >
-            <Bars3Icon className="h-6 w-6" />
-          </button>
-        </div>
-
-        <div className="hidden lg:flex lg:flex-1 lg:justify-end">
-          <button
-            onClick={logout}
-            className="text-sm font-semibold leading-6 text-gray-900 hover:text-gray-700"
-          >
-            Log Out <span aria-hidden="true">&rarr;</span>
-          </button>
-        </div>
-      </nav>
-
-      <Transition show={mobileMenuOpen}>
-        <Dialog
-          as="div"
-          className="lg:hidden"
-          onClose={() => setMobileMenuOpen(false)}
-        >
-          <div className="fixed inset-0 z-10 bg-black bg-opacity-25" />
-          <Dialog.Panel className="fixed inset-y-0 right-0 z-20 w-full overflow-y-auto bg-white px-6 py-6 sm:max-w-sm sm:ring-1 sm:ring-gray-900/10">
-            <div className="flex items-center justify-between">
-              <Link href="#" className="-m-1.5 p-1.5">
-                <span className="sr-only">A2P Energy</span>
-                <img
-                  alt="A2P Energy Logo"
-                  src="https://marketplace.cleanenergytrade.com/assets/img/a2p-red.png"
-                  className="h-12 w-auto"
-                />
-              </Link>
-
-              <button
-                type="button"
-                onClick={() => setMobileMenuOpen(false)}
-                className="-m-2.5 rounded-md p-2.5 text-gray-700"
-                aria-label="Close menu"
-              >
-                <XMarkIcon className="h-6 w-6" />
-              </button>
-            </div>
-
-            <div className="mt-6 flow-root">
-              <div className="-my-6 divide-y divide-gray-500/10">
-                <div className="space-y-2 py-6">
-                  <Link
-                    key="plant_details"
-                    href="#"
-                    className="text-sm font-semibold leading-6 text-gray-900"
-                  >
-                    Plant Details
-                  </Link>
-
-                  <Link
-                    key="inventory"
-                    href="#"
-                    className="text-sm font-semibold leading-6 text-gray-900"
-                  >
-                    Inventory
-                  </Link>
-                </div>
-                <div className="py-6">
-                  <button
-                    onClick={logout}
-                    className="w-full text-left text-sm font-semibold leading-6 text-gray-900 hover:text-gray-700"
-                  >
-                    Log Out
-                  </button>
-                </div>
-              </div>
-            </div>
-          </Dialog.Panel>
-        </Dialog>
-      </Transition>
-    </header>
   );
 }

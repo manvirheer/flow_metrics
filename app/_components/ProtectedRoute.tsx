@@ -31,9 +31,6 @@ const ProtectedRoute = ({ children, roles }: ProtectedRouteProps) => {
   if (roles && !roles.includes(user.role)) {
     return <div className="flex items-center justify-center h-screen">Unauthorized</div>;
   }
-  console.log('ProtectedRoute user:', user);
-  console.log('ProtectedRoute roles:', roles);
-  console.log('ProtectedRoute children:', children);
   return <>{children}</>;
 };
 
