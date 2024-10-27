@@ -1,7 +1,7 @@
 // app/_components/_layouts/staff_layout.tsx
 import React from 'react';
-import Header from '../_elements/header';
-import Sidebar from '../_elements/side_nav';
+import Header from '../_elements/staff_header';
+import Sidebar from '../_elements/staff_side_nav';
 import Footer from '../_elements/footer';
 
 interface StaffLayoutProps {

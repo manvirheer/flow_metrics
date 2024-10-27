@@ -1,22 +1,97 @@
+// app/staff/shift-end-entry/page.tsx
+
 'use client';
 
-import Image from 'next/image';
-import Link from 'next/link';
+import React, { useState, useEffect } from 'react';
+import ProtectedRoute from '../../_components/ProtectedRoute';
 import {
-  LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
-  Legend
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  Legend,
 } from 'recharts';
-import { useState, useEffect } from 'react';
 import api from '../../_utils/axios';
+import { toast } from 'react-toastify';
+import { format } from 'date-fns';
+import { ShiftSchedule } from '../../_types/ShiftSchedule';
+import { ShiftPosting } from '../../_types/ShiftPosting';
+import { Employee } from '../../_types/Employee'; // Adjust the import path as needed
+import { Plant } from '../../_types/Plant'; // Adjust the import path as needed
 
 export default function Home() {
-
   const COLORS = ['#007BFF', '#28A745', '#FFC107'];
+
+  // State for active shift data
+  const [activeShift, setActiveShift] = useState<ShiftSchedule | null>(null);
+  const [loadingShift, setLoadingShift] = useState<boolean>(true);
+  const [errorShift, setErrorShift] = useState<string | null>(null);
+
+  // State for shift postings
+  const [shiftPostings, setShiftPostings] = useState<ShiftPosting[]>([]);
+  const [loadingPostings, setLoadingPostings] = useState<boolean>(true);
+  const [errorPostings, setErrorPostings] = useState<string | null>(null);
+
+  // Fetch active shift data on component mount
+  useEffect(() => {
+    const fetchActiveShift = async () => {
+      try {
+        const response = await api.get<ShiftSchedule[]>('/shift/schedules/active');
+        if (response.data.length > 0) {
+          setActiveShift(response.data[0]); // Assuming one active shift per user
+        } else {
+          setActiveShift(null);
+          toast.info('No active shift found.');
+        }
+      } catch (error: any) {
+        console.error('Error fetching active shift:', error);
+        setErrorShift('Failed to fetch active shift data.');
+        toast.error('Failed to fetch active shift data.');
+      } finally {
+        setLoadingShift(false);
+      }
+    };
+
+    fetchActiveShift();
+  }, []);
+
+  // Fetch shift postings after active shift is fetched
+  useEffect(() => {
+    const fetchShiftPostings = async () => {
+      if (!activeShift) {
+        setLoadingPostings(false);
+        return;
+      }
+
+      try {
+        const response = await api.get<ShiftPosting[]>('/shift/postings');
+        // Filter shift postings that match the active shift's schedule ID
+        const relevantPostings = response.data.filter(
+          (posting) => posting.shiftSchedule.id === activeShift.id
+        );
+        setShiftPostings(relevantPostings);
+      } catch (error: any) {
+        console.error('Error fetching shift postings:', error);
+        setErrorPostings('Failed to fetch shift postings data.');
+        toast.error('Failed to fetch shift postings data.');
+      } finally {
+        setLoadingPostings(false);
+      }
+    };
+
+    fetchShiftPostings();
+  }, [activeShift]);
 
   // Data for main line graph
   const [timeframe, setTimeframe] = useState<'Today' | 'Monthly' | 'Yearly'>('Monthly');
 
-  const lineGraphData: Record<'Today' | 'Monthly' | 'Yearly', Array<{ name: string; fuel: number; briquettes: number; steam: number }>> = {
+  const lineGraphData: Record<
+    'Today' | 'Monthly' | 'Yearly',
+    Array<{ name: string; fuel: number; briquettes: number; steam: number }>
+  > = {
     Today: [
       { name: '06:00', fuel: 90, briquettes: 140, steam: 85 },
       { name: '14:00', fuel: 80, briquettes: 145, steam: 75 },
@@ -47,51 +122,14 @@ export default function Home() {
   const currentData = lineGraphData[timeframe];
   console.log('Current Data:', currentData); // Debugging line
 
-  // Example data for shift information
-  const currentShift = 'A';
-  const shiftDetails: Record<string, {
-    startTime: string;
-    endTime: string;
-    employees: Array<{ id: string; name: string; class: string }>;
-    shipments: number;
-  }> = {
-    A: {
-      startTime: '06:00',
-      endTime: '14:00',
-      employees: [
-        { id: 'E101', name: 'Sukhjinder Singh', class: 'Second Class' },
-        { id: 'E102', name: 'Raghubeer Sharma', class: 'Fireman' },
-      ],
-      shipments: 0,
-    },
-    B: {
-      startTime: '14:00',
-      endTime: '22:00',
-      employees: [
-        { id: 'E103', name: 'Alice Brown', class: 'Second Class' },
-        { id: 'E104', name: 'Bob White', class: 'Fireman' },
-      ],
-      shipments: 1,
-    },
-    C: {
-      startTime: '22:00',
-      endTime: '06:00',
-      employees: [
-        { id: 'E105', name: 'Charlie Green', class: 'Second Class' },
-        { id: 'E106', name: 'Diana Black', class: 'Fireman' },
-      ],
-      shipments: 2,
-    },
-  };
-
-  const shiftData = shiftDetails[currentShift];
-  console.log('Shift Data:', shiftData); // Debugging line
-
   // State for performance metrics card
   const [metricsTimeframe, setMetricsTimeframe] = useState<'Daily' | 'Weekly' | 'Yearly'>('Daily');
 
   // Example data for the performance metrics
-  const performanceMetricsData: Record<'Daily' | 'Weekly' | 'Yearly', Array<{ metric: string; value: string; change: string }>> = {
+  const performanceMetricsData: Record<
+    'Daily' | 'Weekly' | 'Yearly',
+    Array<{ metric: string; value: string; change: string }>
+  > = {
     Daily: [
       { metric: 'Average Incoming Stock GCV', value: '4,200 Kcal/Kg', change: '+3%' },
       { metric: 'Ash Dispatched', value: '1,500 Kg', change: '-1%' },
@@ -115,6 +153,39 @@ export default function Home() {
   const currentMetricsData = performanceMetricsData[metricsTimeframe];
   console.log('Current Metrics Data:', currentMetricsData); // Debugging line
 
+  // Loading and error states for shift postings data
+  if (loadingShift || loadingPostings) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <div className="text-xl text-gray-700">Loading shift data...</div>
+      </div>
+    );
+  }
+
+  if (errorShift || errorPostings) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <div className="text-xl text-red-500">{errorShift || errorPostings}</div>
+      </div>
+    );
+  }
+
+  // If active shift exists, extract necessary details from shift postings
+  const shiftData = activeShift
+    ? {
+        currentShift: activeShift.shiftTitle,
+        startTime: activeShift.startTime,
+        endTime: activeShift.endTime,
+        employees: shiftPostings.map((posting) => ({
+          ...posting.staff,
+          class: posting.staff.staff.areaOfWork, // Assuming 'class' refers to 'areaOfWork'
+        })),
+        shipments: shiftPostings.reduce((acc, posting) => acc + posting.shiftSchedule.plant.plantId === activeShift.plant.plantId ? posting.staff.staff.natureOfWork === 'Full-Time' ? 1 : 0 : 0, 0), // Adjust logic based on actual data
+      }
+    : null;
+
+  console.log('Shift Data:', shiftData); // Debugging line
+
   return (
     <div className="grid bg-gray-100 grid-rows-[auto_1fr_auto] items-start justify-items-center min-h-screen pb-10 gap-16 p-4 max-sm:p-16 text-gray-900 font-sans">
       {/* Header Section */}
@@ -126,14 +197,9 @@ export default function Home() {
           >
             Dashboard
           </h1>
-          <p className="mt-2 text-md text-gray-600">
-            Overview of boiler operations at the plant
-          </p>
+          <p className="mt-2 text-md text-gray-600">Overview of boiler operations at the plant</p>
         </div>
-
       </header>
-
-
 
       {/* Main Stats and Charts Section */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 w-4/5">
@@ -160,40 +226,71 @@ export default function Home() {
               <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
               <XAxis dataKey="name" tick={{ fill: '#6b7280' }} />
               <YAxis tick={{ fill: '#6b7280' }} />
-              <Tooltip contentStyle={{ backgroundColor: '#fff', border: '1px solid #e5e7eb', borderRadius: '8px' }} />
+              <Tooltip
+                contentStyle={{
+                  backgroundColor: '#fff',
+                  border: '1px solid #e5e7eb',
+                  borderRadius: '8px',
+                }}
+              />
               <Legend verticalAlign="top" align="right" iconType="circle" />
-              <Line type="monotone" dataKey="fuel" stroke="#007BFF" strokeWidth={3} dot={{ r: 5 }} name="Fuel Consumption" />
-              <Line type="monotone" dataKey="briquettes" stroke="#f07167" strokeWidth={3} dot={{ r: 5 }} name="Briquettes In Stock" />
-              <Line type="monotone" dataKey="steam" stroke="#28A745" strokeWidth={3} dot={{ r: 5 }} name="Steam Generation" />
+              <Line
+                type="monotone"
+                dataKey="fuel"
+                stroke="#007BFF"
+                strokeWidth={3}
+                dot={{ r: 5 }}
+                name="Fuel Consumption"
+              />
+              <Line
+                type="monotone"
+                dataKey="briquettes"
+                stroke="#f07167"
+                strokeWidth={3}
+                dot={{ r: 5 }}
+                name="Briquettes In Stock"
+              />
+              <Line
+                type="monotone"
+                dataKey="steam"
+                stroke="#28A745"
+                strokeWidth={3}
+                dot={{ r: 5 }}
+                name="Steam Generation"
+              />
             </LineChart>
           </ResponsiveContainer>
-          <div className="border-t mt-4 pt-4 text-gray-500 text-sm">
-            Data is represented in Metric Tonnes (MT).
-          </div>
+          <div className="border-t mt-4 pt-4 text-gray-500 text-sm">Data is represented in Metric Tonnes (MT).</div>
         </div>
 
         {/* Shift Information Card */}
-        <div className="bg-white rounded-xl shadow-lg p-8 text-gray-800">
-          <h2 className="text-2xl font-semibold mb-4">Current Shift Information</h2>
-          <div className="border-b pb-4 mb-4">
-            <p className="text-lg font-semibold">Shift: {currentShift}</p>
-            <p className="text-md text-gray-600">Time: {shiftData.startTime} - {shiftData.endTime}</p>
-          </div>
-          <div className="mb-4">
-            <h3 className="text-xl font-semibold mb-2">Boiler Operators</h3>
-            {shiftData.employees.map((employee) => (
-              <div key={employee.id} className="flex justify-between items-center bg-gray-100 rounded-md p-4 mb-2">
-                <div>
-                  <p className="font-semibold">{employee.name} (ID: {employee.id})</p>
-                  <p className="text-sm text-gray-600">Class: {employee.class}</p>
+        {shiftData && (
+          <div className="bg-white rounded-xl shadow-lg p-8 text-gray-800">
+            <h2 className="text-2xl font-semibold mb-4">Current Shift Information</h2>
+            <div className="border-b pb-4 mb-4">
+              <p className="text-lg font-semibold">Shift: {shiftData.currentShift}</p>
+              <p className="text-md text-gray-600">
+                Time: {shiftData.startTime} - {shiftData.endTime}
+              </p>
+            </div>
+            <div className="mb-4">
+              <h3 className="text-xl font-semibold mb-2">Boiler Operators</h3>
+              {shiftData.employees.map((employee: Employee) => (
+                <div key={employee.id} className="flex justify-between items-center bg-gray-100 rounded-md p-4 mb-2">
+                  <div>
+                    <p className="font-semibold">
+                      {employee.name} (ID: {employee.staff.a2pEmpId})
+                    </p>
+                    <p className="text-sm text-gray-600">Class: {employee.class}</p>
+                  </div>
                 </div>
-              </div>
-            ))}
+              ))}
+            </div>
+            <div className="border-t pt-4">
+              <p className="text-lg font-semibold">New Shipments: {shiftData.shipments}</p>
+            </div>
           </div>
-          <div className="border-t pt-4">
-            <p className="text-lg font-semibold">New Shipments: {shiftData.shipments}</p>
-          </div>
-        </div>
+        )}
 
         {/* Performance Metrics Section */}
         <div className="bg-white rounded-xl shadow-lg p-8 text-gray-800">
@@ -217,8 +314,9 @@ export default function Home() {
                 <p className="text-sm text-gray-600">{metricData.value}</p>
               </div>
               <div
-                className={`flex items-center justify-center text-white px-3 py-1 rounded-full ${metricData.change.includes('+') ? 'bg-green-500' : 'bg-red-500'
-                  }`}
+                className={`flex items-center justify-center text-white px-3 py-1 rounded-full ${
+                  metricData.change.includes('+') ? 'bg-green-500' : 'bg-red-500'
+                }`}
               >
                 <span>{metricData.change}</span>
               </div>

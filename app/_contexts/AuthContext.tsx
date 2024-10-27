@@ -95,7 +95,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setUser(fetchedUser);
       console.log('Login successful', fetchedUser);
 
-      router.push('/dashboard/plant');
+      // Redirect to the dashboard if Admin role
+      if (fetchedUser.role === 'Admin') {
+        router.push('/dashboard/plant');
+      } else {
+        router.push('/staff');
+      }
     } catch (error: any) {
       console.error('Login failed', error);
       if (error.response?.data?.message) {

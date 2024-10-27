@@ -19,8 +19,10 @@ const DashboardClientLayout: React.FC<DashboardClientLayoutProps> = ({ children 
   }
 
   return (
-    <ProtectedRoute roles={['Admin']}> 
-        <AdminLayout>{children}</AdminLayout>
+    // Use the ProtectedRoute component to check if the user is logged in
+    // Load admin layout or staff layout based on the user role
+    <ProtectedRoute>
+      {user?.role === 'Admin' ? <AdminLayout>{children}</AdminLayout> : <StaffLayout>{children}</StaffLayout>}
     </ProtectedRoute>
   );
 };

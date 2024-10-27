@@ -1,24 +1,18 @@
+// app/logbooks/shift-schedule/EmployeeTable.tsx
 'use client';
 
 import React from 'react';
 import {
-  useTable,
-  useSortBy,
-  useGlobalFilter,
-  Column,
-  TableInstance,
-  TableState,
-  UseGlobalFiltersInstanceProps,
-  UseGlobalFiltersState,
-} from 'react-table';
+  useReactTable,
+  getCoreRowModel,
+  getSortedRowModel,
+  getFilteredRowModel,
+  ColumnDef,
+  flexRender,
+  SortingState,
+} from '@tanstack/react-table';
 import { Employee } from '../../_types/Employee';
 import { PencilSquareIcon, TrashIcon } from '@heroicons/react/24/outline';
-
-type TableInstanceWithHooks<T extends object> = TableInstance<T> &
-  UseGlobalFiltersInstanceProps<T>;
-
-type TableStateWithHooks<T extends object> = TableState<T> &
-  UseGlobalFiltersState<T>;
 
 interface EmployeeTableProps {
   employees: Employee[];
@@ -31,42 +25,49 @@ export default function EmployeeTable({
   onEdit = () => {},
   onDelete = () => {},
 }: EmployeeTableProps) {
+  // State for global filter and sorting
+  const [globalFilter, setGlobalFilter] = React.useState('');
+  const [sorting, setSorting] = React.useState<SortingState>([]);
+
   // Define the columns for the table
-  const columns: Column<Employee>[] = React.useMemo(
+  const columns = React.useMemo<ColumnDef<Employee>[]>(
     () => [
       {
-        Header: 'No.',
         id: 'rowIndex',
-        Cell: ({ row }) => row.index + 1,
+        header: 'No.',
+        cell: (info) => info.row.index + 1,
       },
       {
-        Header: 'Name',
-        accessor: 'name',
+        accessorKey: 'name',
+        header: 'Name',
       },
       {
-        Header: 'Email',
-        accessor: 'email',
+        accessorKey: 'email',
+        header: 'Email',
       },
       {
-        Header: 'Mobile',
-        accessor: 'mobile',
+        accessorKey: 'mobile',
+        header: 'Mobile',
       },
       {
-        Header: 'A2P Emp ID',
-        accessor: (row) => row.staff.a2pEmpId || '',
+        id: 'a2pEmpId',
+        header: 'A2P Emp ID',
+        accessorFn: (row) => row.staff.a2pEmpId || '',
       },
       {
-        Header: 'Area of Work',
-        accessor: (row) => row.staff.areaOfWork || '',
+        id: 'areaOfWork',
+        header: 'Area of Work',
+        accessorFn: (row) => row.staff.areaOfWork || '',
       },
       {
-        Header: 'Nature of Work',
-        accessor: (row) => row.staff?.natureOfWork || '',
+        id: 'natureOfWork',
+        header: 'Nature of Work',
+        accessorFn: (row) => row.staff?.natureOfWork || '',
       },
       {
-        Header: 'Actions',
         id: 'actions',
-        Cell: ({ row }) => (
+        header: 'Actions',
+        cell: ({ row }) => (
           <div className="flex space-x-2">
             <button onClick={() => onEdit(row.original)}>
               <PencilSquareIcon className="h-5 w-5 text-gray-500 hover:text-blue-500" />
@@ -84,35 +85,20 @@ export default function EmployeeTable({
   // Prepare the data
   const data = React.useMemo(() => employees, [employees]);
 
-  // Use the useTable hook with global filter and sort features
-  const tableInstance = useTable<Employee>(
-    {
-      columns,
-      data,
-      initialState: {
-        hiddenColumns: ['emergencyContactPhoneNumber', 'emergencyContactName'],
-      },
+  // Use the useReactTable hook
+  const table = useReactTable({
+    data,
+    columns,
+    state: {
+      globalFilter,
+      sorting,
     },
-    useGlobalFilter, // Enable global filtering
-    useSortBy // Enable sorting
-  );
-
-  // Extend the table instance and state types to include global filter properties
-  const {
-    getTableProps,
-    getTableBodyProps,
-    headerGroups,
-    rows,
-    prepareRow,
-    state,
-    setGlobalFilter,
-  } = tableInstance as TableInstanceWithHooks<Employee>;
-
-  const { globalFilter } = state as TableStateWithHooks<Employee>;
-
-  const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setGlobalFilter(e.target.value || undefined);
-  };
+    onGlobalFilterChange: setGlobalFilter,
+    onSortingChange: setSorting,
+    getCoreRowModel: getCoreRowModel(),
+    getFilteredRowModel: getFilteredRowModel(),
+    getSortedRowModel: getSortedRowModel(),
+  });
 
   return (
     <div>
@@ -120,76 +106,74 @@ export default function EmployeeTable({
       <div className="mb-4">
         <input
           value={globalFilter || ''}
-          onChange={handleSearch}
+          onChange={(e) => setGlobalFilter(e.target.value)}
           placeholder="Search..."
           className="block w-full p-2 border border-gray-300 rounded-md 
-                           shadow-sm placeholder-gray-500 focus:outline-none focus:ring-blue-600 
-                           focus:border-blue-500 sm:text-md text-slate-900"
+                               shadow-sm placeholder-gray-500 focus:outline-none focus:ring-blue-600 
+                               focus:border-blue-500 sm:text-md text-slate-900"
         />
       </div>
 
       {/* Employee Table */}
       <div className="overflow-x-auto">
-        <table
-          {...getTableProps()}
-          className="w-full divide-y divide-gray-200"
-        >
+        <table className="w-full divide-y divide-gray-200">
           <thead className="bg-gray-200">
-            {headerGroups.map((headerGroup) => (
-              <tr
-                {...headerGroup.getHeaderGroupProps()}
-                key={headerGroup.id}
-              >
-                {headerGroup.headers.map((column) => (
-                  <th
-                    {...column.getHeaderProps(
-                      (column as any).getSortByToggleProps()
-                    )}
-                    className="px-6 py-3 text-left text-xs font-medium text-gray-800 uppercase tracking-wider"
-                    key={column.id}
-                  >
-                    {column.render('Header')}
-                    {/* Add sorting indicator */}
-                    <span>
-                      {(column as any).isSorted
-                        ? (column as any).isSortedDesc
-                          ? ' 🔽'
-                          : ' 🔼'
-                        : ''}
-                    </span>
-                  </th>
-                ))}
+            {table.getHeaderGroups().map((headerGroup) => (
+              <tr key={headerGroup.id}>
+                {headerGroup.headers.map((header) => {
+                  const canSort = header.column.getCanSort();
+                  const sortingProps = canSort
+                    ? { onClick: header.column.getToggleSortingHandler() }
+                    : {};
+                  const isSorted = header.column.getIsSorted();
+                  return (
+                    <th
+                      key={header.id}
+                      {...sortingProps}
+                      className={`px-6 py-3 text-left text-xs font-medium text-gray-800 uppercase tracking-wider ${
+                        canSort ? 'cursor-pointer select-none' : ''
+                      }`}
+                    >
+                      {flexRender(
+                        header.column.columnDef.header,
+                        header.getContext()
+                      )}
+                      {/* Add sorting indicator */}
+                      {isSorted ? (
+                        isSorted === 'desc' ? (
+                          ' 🔽'
+                        ) : (
+                          ' 🔼'
+                        )
+                      ) : (
+                        ''
+                      )}
+                    </th>
+                  );
+                })}
               </tr>
             ))}
           </thead>
-          <tbody
-            {...getTableBodyProps()}
-            className="bg-white divide-y divide-gray-200"
-          >
-            {rows.map((row) => {
-              prepareRow(row);
-              return (
-                <tr
-                  {...row.getRowProps()}
-                  className="hover:bg-gray-100"
-                  key={row.id}
-                >
-                  {row.cells.map((cell) => (
-                    <td
-                      {...cell.getCellProps()}
-                      className="px-6 py-4 whitespace-nowrap text-sm text-gray-800"
-                      key={cell.column.id}
-                    >
-                      {cell.render('Cell')}
-                    </td>
-                  ))}
-                </tr>
-              );
-            })}
-            {rows.length === 0 && (
+          <tbody className="bg-white divide-y divide-gray-200">
+            {table.getRowModel().rows.map((row) => (
+              <tr key={row.id} className="hover:bg-gray-100">
+                {row.getVisibleCells().map((cell) => (
+                  <td
+                    key={cell.id}
+                    className="px-6 py-4 whitespace-nowrap text-sm text-gray-800"
+                  >
+                    {flexRender(
+                      cell.column.columnDef.cell,
+                      cell.getContext()
+                    )}
+                  </td>
+                ))}
+              </tr>
+            ))}
+            {table.getRowModel().rows.length === 0 && (
               <tr>
                 <td
-                  colSpan={columns.length}
+                  colSpan={table.getAllColumns().length}
                   className="px-6 py-4 whitespace-nowrap text-sm text-gray-700 text-center"
                 >
                   No employees found.
