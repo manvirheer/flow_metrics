@@ -120,7 +120,6 @@ export default function Home() {
   };
 
   const currentData = lineGraphData[timeframe];
-  console.log('Current Data:', currentData); // Debugging line
 
   // State for performance metrics card
   const [metricsTimeframe, setMetricsTimeframe] = useState<'Daily' | 'Weekly' | 'Yearly'>('Daily');
@@ -151,7 +150,6 @@ export default function Home() {
   };
 
   const currentMetricsData = performanceMetricsData[metricsTimeframe];
-  console.log('Current Metrics Data:', currentMetricsData); // Debugging line
 
   // Loading and error states for shift postings data
   if (loadingShift || loadingPostings) {
@@ -183,8 +181,6 @@ export default function Home() {
         shipments: shiftPostings.reduce((acc, posting) => acc + posting.shiftSchedule.plant.plantId === activeShift.plant.plantId ? posting.staff.staff.natureOfWork === 'Full-Time' ? 1 : 0 : 0, 0), // Adjust logic based on actual data
       }
     : null;
-
-  console.log('Shift Data:', shiftData); // Debugging line
 
   return (
     <div className="grid bg-gray-100 grid-rows-[auto_1fr_auto] items-start justify-items-center min-h-screen pb-10 gap-16 p-4 max-sm:p-16 text-gray-900 font-sans">

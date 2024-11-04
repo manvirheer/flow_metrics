@@ -11,9 +11,6 @@ interface ShiftDetailsProps {
 }
 
 const ShiftDetails: React.FC<ShiftDetailsProps> = ({ activeShift }) => {
-    console.log('Shift Details Page, activeShift:', activeShift);
-
-
   return (
     <div className="bg-white shadow-md rounded-lg p-6 mb-8">
       <h2 className="text-xl font-semibold text-gray-700 mb-4 text-center">

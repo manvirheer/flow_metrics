@@ -7,12 +7,16 @@ import api from '../../../_utils/axios';
 import { ShiftPosting, ShiftSchedule } from '../types';
 import { AuthContext } from '../../../_contexts/AuthContext';
 import { toast } from 'react-toastify';
-import { format } from 'date-fns';
+import { format, set } from 'date-fns';
+import { useRouter } from 'next/navigation';
 
 const useActiveShift = () => {
   const { user, loading: authLoading } = useContext(AuthContext);
   const [activeShift, setActiveShift] = useState<ShiftSchedule | null>(null);
+  const [entryExisting, setEntryExist] = useState<boolean>(false);
   const [loading, setLoading] = useState<boolean>(true);
+
+  const router = useRouter();
 
   useEffect(() => {
     const fetchActiveShift = async () => {
@@ -20,15 +24,24 @@ const useActiveShift = () => {
         try {
           const currentTime = format(new Date(), 'HH:mm:ss');
           const response = await api.get<ShiftPosting[]>('/shift/schedules/active', {
-          
+
           });
           if (response.data.length > 0) {
             const shiftSchedule = response.data[0];
-            console.log('In useActiveShift.ts, response.data:', shiftSchedule);
-          
-            setActiveShift(shiftSchedule as any); // Assuming one active shift per staff
+            api.get('/shift/end-entry/check/' + shiftSchedule?.id).then((response) => {
+              if (response.data == true) {
+                // show the error for 3 seconds using settimeout
+                toast.error('Shift already ended for today');
+                setEntryExist(false);
+              }
+              else {
+                setEntryExist(false);
+              }
+            });
+            setActiveShift(shiftSchedule as any);
           } else {
             setActiveShift(null);
+            setEntryExist(false);
             toast.info('No active shift found for your current time.');
           }
         } catch (error: any) {
@@ -45,7 +58,7 @@ const useActiveShift = () => {
     fetchActiveShift();
   }, [user]);
 
-  return { activeShift, loading };
+  return { activeShift, entryExisting, loading };
 };
 
 export default useActiveShift;

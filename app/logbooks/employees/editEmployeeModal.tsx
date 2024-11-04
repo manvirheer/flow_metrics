@@ -29,7 +29,6 @@ export default function EditEmployeeModal({
 
   const handleUpdateEmployee = (data: Employee) => {
     setLoading(true);
-    console.log('data:', data);
     // Prepare the data to match UpdateUserDto
     const updateData = {
       email: data.email,

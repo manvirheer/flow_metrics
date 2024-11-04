@@ -17,7 +17,7 @@ const StaffDashboard: React.FC = () => {
       headline: 'Manage and track new shipments efficiently.',
       headlineHindi: 'नई स्टॉक के लिए प्रविष्टि जोड़ें।',
       icon: TruckIcon,
-      link: '/staff/new-shipment',
+      link: '/staff/shipments',
     },
     {
       title: 'Shift End',
@@ -33,8 +33,16 @@ const StaffDashboard: React.FC = () => {
       headline: 'Log activities and remarks to maintain operational transparency.',
       headlineHindi: 'संचालन पारदर्शिता बनाए रखने के लिए गतिविधियाँ और टिप्पणियाँ लॉग करें।',
       icon: PencilIcon,
-      link: '/staff/add-activity',
+      link: '/staff/activity',
     },
+    {
+      title: 'Hourly Shift Parameter Reading',
+      titleHindi: 'घंटे के शिफ्ट पैरामीटर',
+      headline: 'Record hourly shift parameter readings for quality control.',
+      headlineHindi: 'गुणवत्ता नियंत्रण के लिए घंटे के शिफ्ट पैरामीटर पढ़ना दर्ज करें।',
+      icon: ClipboardDocumentListIcon,
+      link: '/staff/steam-parameters',
+    }
   ];
 
   return (

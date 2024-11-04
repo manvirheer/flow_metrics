@@ -1,8 +1,10 @@
+// app/layout.tsx
+
 import './globals.css';
 import React from 'react';
-import AuthProviderWrapper from './_components/AuthProviderWrapper';
-import { PlantProvider } from './_contexts/PlantContext';
-
+import Providers from './providers'; // We'll create this component
+import { ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 export const metadata = {
   title: 'Plant Dashboard',
@@ -11,15 +13,13 @@ export const metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <AuthProviderWrapper>
-      <PlantProvider>
-        <html lang="en">
-          <body className="flex flex-col min-h-screen">
-            {/* Main Content */}
-            <div className="flex-1">{children}</div>
-          </body>
-        </html>
-      </PlantProvider>
-    </AuthProviderWrapper>
+    <html lang="en">
+      <body className="flex flex-col min-h-screen">
+        <Providers>
+          {/* <ToastContainer /> */}
+          <div className="flex-1">{children}</div>
+        </Providers>
+      </body>
+    </html>
   );
 }

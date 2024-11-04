@@ -44,7 +44,7 @@ export default function LoginPage() {
                     className="h-32 w-auto mb-4"
                 />
                 {/* Company Name */}
-                <h1 className="text-4xl font-extrabold">A2P Energy Private LTD.</h1>
+                <h1 className="text-4xl font-extrabold">A2P Energy Solution Pvt Ltd</h1>
                 <p className="mt-2 text-lg">Empowering Sustainable Solutions</p>
             </div>
 

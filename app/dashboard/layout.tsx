@@ -1,4 +1,5 @@
 // app/dashboard/layout.tsx
+
 import React from 'react';
 import DashboardClientLayout from '../_components/DashboardClientLayout';
 
