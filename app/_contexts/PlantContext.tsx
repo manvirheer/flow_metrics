@@ -39,9 +39,9 @@ export const PlantProvider = ({ children }: { children: ReactNode }) => {
                 try {
                     if (user.role === 'Staff') {
                         console.log('Fetching plants for staff');
-                        const response = await api.get('/plants/staff/' + user.id);
+                        const response = await api.get('/plants/staff/' + user.id)
                         console.log('Fetched plants', response.data);
-                        const plant = await api.get('/plants/' + response.data.plantId);
+                        const plant = await api.get('/plants/' + response.data);
                         console.log('Fetched plant', plant.data);
                         setPlants([plant.data]);
                         setSelectedPlant(plant.data);

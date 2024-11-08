@@ -216,8 +216,9 @@ const ActivityTable: React.FC<ActivityTableProps> = ({
             ))}
 
             {/* Render the empty form row only on the last page */}
-            {table.getPageCount() - 1 ===
-              table.getState().pagination.pageIndex && (
+            {(table.getPageCount() === 0 ||
+              table.getState().pagination.pageIndex ===
+                table.getPageCount() - 1) && (
                 <tr className="bg-gray-50">
                   <td className="px-4 py-2 border-b border-gray-300">
                     {/* Shift Title is prepopulated and non-editable */}
@@ -318,8 +319,9 @@ const ActivityTable: React.FC<ActivityTableProps> = ({
         </div>
 
         {/* Submit Button */}
-        {table.getPageCount() - 1 ===
-          table.getState().pagination.pageIndex && (
+        {(table.getPageCount() === 0 ||
+              table.getState().pagination.pageIndex ===
+                table.getPageCount() - 1) && (
             <div className="flex justify-end mt-4">
               <button
                 onClick={handleSubmit}

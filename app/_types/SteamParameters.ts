@@ -1,37 +1,50 @@
-// app/_types/SteamParameters.ts
+import { ShiftSchedule } from "./ShiftSchedule";
 
-import { Employee } from './Employee';
-import { Plant } from './Plant';
-import { ShiftSchedule } from './ShiftSchedule';
-
-export interface SteamParameters {
+export interface SteamParametersBasic {
   id: string;
-  createdBy: Employee;
-  updatedBy?: Employee;
   createdAt: string;
-  updatedAt?: string;
-  plant?: Plant;
-  shiftSchedule?: ShiftSchedule;
+  updatedAt: string;
+  timeStart: string;
+  timeEnd: string;
+  steamPressure: number;
+  steamFlow: number;
+  steamTemperature: number;
+  elMeter: number;
+  stackTemperature: number;
+  feedWaterTemperature: number;
+  feedWaterMeterReading: number;
+  fuelPumpPr: number;
+  fuelPumpRtPr: number;
+  filterNumber: number;
+  feedWaterPr: number;
+  feedWaterPh: number;
+  feedWaterTds: number;
+  blowDownPh: number;
+  blowDownTds: number;
+  shiftSchedule: ShiftSchedule;
+}
 
-  // Optional attributes
-    plantId?: string;
-    shiftScheduleId?: string;
+export interface SteamParametersUpdate {
+  id: string;
+  timeStart: string;
+  timeEnd: string;
+  steamPressure: number;
+  steamFlow: number;
+  steamTemperature: number;
+  elMeter: number;
+  stackTemperature: number;
+  feedWaterTemperature: number;
+  feedWaterMeterReading: number;
+  fuelPumpPr: number;
+  fuelPumpRtPr: number;
+  filterNumber: number;
+  feedWaterPr: number;
+  feedWaterPh: number;
+  feedWaterTds: number;
+  blowDownPh: number;
+  blowDownTds: number;
+}
 
-  timeStart?: string;
-  timeEnd?: string;
-  steamPressure?: number;
-  steamFlow?: number;
-  steamTemperature?: number;
-  elMeter?: number;
-  stackTemperature?: number;
-  feedWaterTemperature?: number;
-  feedWaterMeterReading?: number;
-  fuelPumpPr?: number;
-  fuelPumpRtPr?: number;
-  filterNumber?: number;
-  feedWaterPr?: number;
-  feedWaterPh?: number;
-  feedWaterTds?: number;
-  blowDownPh?: number;
-  blowDownTds?: number;
+export interface BulkUpdateSteamParameters {
+  updates: SteamParametersUpdate[];
 }

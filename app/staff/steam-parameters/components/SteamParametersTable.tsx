@@ -1,8 +1,6 @@
-// app/staff/steam-parameters/components/SteamParametersTable.tsx
-
 'use client';
 
-import React, { useMemo, useState, useEffect } from 'react';
+import React, { useMemo, useState, useEffect, useCallback, useRef } from 'react';
 import {
   useReactTable,
   getCoreRowModel,
@@ -13,497 +11,355 @@ import {
   SortingState,
   PaginationState,
 } from '@tanstack/react-table';
-import { Plant, ShiftSchedule, SteamParameters } from '../types';
-import { format } from 'date-fns';
+import { SteamParametersBasic, SteamParametersUpdate } from '../../../_types/SteamParameters';
 import { toast } from 'react-toastify';
+import debounce from 'lodash/debounce';
 
 interface SteamParametersTableProps {
-  steamParameters: SteamParameters[];
-  activeShift: ShiftSchedule;
-  onAdd: (data: Partial<SteamParameters>) => void;
-  plant: Plant;
+  steamParameters: SteamParametersBasic[];
+  onBulkUpdate: (updates: SteamParametersUpdate[]) => Promise<void>;
+  loading: boolean;
 }
+
+const TOTAL_COLUMNS = 16; // Total number of columns in the table
+const FIRST_COLUMN_KEY = 'timeStart'; // The accessorKey of the first column to exclude
+const TAB_COLUMNS = TOTAL_COLUMNS - 1; // Number of tabbable columns
 
 const SteamParametersTable: React.FC<SteamParametersTableProps> = ({
   steamParameters,
-  onAdd,
-  activeShift,
-  plant,
+  onBulkUpdate,
+  loading,
 }) => {
-  if (!plant || !activeShift) {
-    return <div>Loading...</div>;
-  }
-
-  // State for the new steam parameters entry (last row)
-  const [newEntry, setNewEntry] = useState<Partial<SteamParameters>>({
-    plantId: plant.plantId,
-    shiftScheduleId: activeShift.id,
-    timeStart: '',
-    timeEnd: '',
-    steamPressure: undefined,
-    steamFlow: undefined,
-    steamTemperature: undefined,
-    elMeter: undefined,
-    stackTemperature: undefined,
-    feedWaterTemperature: undefined,
-    feedWaterMeterReading: undefined,
-    fuelPumpPr: undefined,
-    fuelPumpRtPr: undefined,
-    filterNumber: undefined,
-    feedWaterPr: undefined,
-    feedWaterPh: undefined,
-    feedWaterTds: undefined,
-    blowDownPh: undefined,
-    blowDownTds: undefined,
-  });
-
-  // Update newEntry when plant or activeShift changes
-  useEffect(() => {
-    setNewEntry((prev: Partial<SteamParameters>) => ({
-      ...prev,
-      shiftScheduleId: activeShift.id,
-      plantId: plant.plantId,
-    }));
-  }, [plant, activeShift]);
-
-  // Define table columns
-  const columns = useMemo<ColumnDef<SteamParameters, any>[]>(
-    () => [
-      {
-        accessorKey: 'shiftSchedule.shiftTitle',
-        header: 'Shift Title / शिफ्ट शीर्षक',
-        cell: ({ getValue }) => getValue<string>(),
-      },
-      {
-        header: 'Date / तारीख',
-        accessorKey: 'createdAt',
-        cell: ({ getValue }) =>
-          format(new Date(getValue<string>()), 'MM/dd/yyyy'),
-      },
-      {
-        header: 'Time Start / समय प्रारंभ',
-        accessorKey: 'timeStart',
-        cell: ({ getValue }) => getValue<string>() || '-',
-      },
-      {
-        header: 'Time End / समय समाप्ति',
-        accessorKey: 'timeEnd',
-        cell: ({ getValue }) => getValue<string>() || '-',
-      },
-      {
-        header: 'Steam Pressure / स्टीम प्रेशर',
-        accessorKey: 'steamPressure',
-        cell: ({ getValue }) => (getValue<number>() ?? '-').toString(),
-      },
-      {
-        header: 'Steam Flow / स्टीम फ्लो',
-        accessorKey: 'steamFlow',
-        cell: ({ getValue }) => (getValue<number>() ?? '-').toString(),
-      },
-      {
-        header: 'Steam Temperature / स्टीम तापमान',
-        accessorKey: 'steamTemperature',
-        cell: ({ getValue }) => (getValue<number>() ?? '-').toString(),
-      },
-      {
-        header: 'E/L Meter / E/L मीटर',
-        accessorKey: 'elMeter',
-        cell: ({ getValue }) => (getValue<number>() ?? '-').toString(),
-      },
-      {
-        header: 'Stack Temperature / स्टैक तापमान',
-        accessorKey: 'stackTemperature',
-        cell: ({ getValue }) => (getValue<number>() ?? '-').toString(),
-      },
-      {
-        header: 'Feed Water Temperature / फीड वाटर तापमान',
-        accessorKey: 'feedWaterTemperature',
-        cell: ({ getValue }) => (getValue<number>() ?? '-').toString(),
-      },
-      {
-        header: 'Feed Water Meter Reading / फीड वाटर मीटर रीडिंग',
-        accessorKey: 'feedWaterMeterReading',
-        cell: ({ getValue }) => (getValue<number>() ?? '-').toString(),
-      },
-      {
-        header: 'Fuel Pump Pr / फ्यूल पंप प्रेशर',
-        accessorKey: 'fuelPumpPr',
-        cell: ({ getValue }) => (getValue<number>() ?? '-').toString(),
-      },
-      {
-        header: 'Fuel Pump RT Pr / फ्यूल पंप आरटी प्रेशर',
-        accessorKey: 'fuelPumpRtPr',
-        cell: ({ getValue }) => (getValue<number>() ?? '-').toString(),
-      },
-      {
-        header: 'Filter Number / फ़िल्टर नंबर',
-        accessorKey: 'filterNumber',
-        cell: ({ getValue }) => (getValue<number>() ?? '-').toString(),
-      },
-      {
-        header: 'Feed Water Pr / फीड वाटर प्रेशर',
-        accessorKey: 'feedWaterPr',
-        cell: ({ getValue }) => (getValue<number>() ?? '-').toString(),
-      },
-      {
-        header: 'Feed Water pH / फीड वाटर पीएच',
-        accessorKey: 'feedWaterPh',
-        cell: ({ getValue }) => (getValue<number>() ?? '-').toString(),
-      },
-      {
-        header: 'Feed Water TDS / फीड वाटर टीडीएस',
-        accessorKey: 'feedWaterTds',
-        cell: ({ getValue }) => (getValue<number>() ?? '-').toString(),
-      },
-      {
-        header: 'Blow Down pH / ब्लो डाउन पीएच',
-        accessorKey: 'blowDownPh',
-        cell: ({ getValue }) => (getValue<number>() ?? '-').toString(),
-      },
-      {
-        header: 'Blow Down TDS / ब्लो डाउन टीडीएस',
-        accessorKey: 'blowDownTds',
-        cell: ({ getValue }) => (getValue<number>() ?? '-').toString(),
-      },
-    ],
-    []
-  );
-
-  const data = useMemo(() => steamParameters, [steamParameters]);
-
-  const [sorting, setSorting] = useState<SortingState>([
-    {
-      id: 'createdAt',
-      desc: false, // ascending order to have oldest entries first
-    },
-  ]);
-
-  const pageSize = 5; // Adjusted page size to account for the empty form row
-
+  // State Variables
+  const [data, setData] = useState<SteamParametersBasic[]>([]);
+  const [modifiedRows, setModifiedRows] = useState<{ [id: string]: SteamParametersUpdate }>({});
+  const [cellErrors, setCellErrors] = useState<{ [key: string]: string }>({});
+  const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
+  const [sorting, setSorting] = useState<SortingState>([]);
   const [pagination, setPagination] = useState<PaginationState>({
     pageIndex: 0,
-    pageSize: pageSize,
+    pageSize: 10,
   });
 
-  useEffect(() => {
-    table.setPageIndex(Math.max(table.getPageCount() - 1, 0));
-  }, [data.length, pageSize]);
+  // Ref to track if Tab was pressed
+  const isTabPressed = useRef<boolean>(false);
 
+  // Ref to store input elements based on tabIndex
+  const inputRefs = useRef<{ [key: number]: HTMLInputElement | null }>({});
+
+  // Column Order Mapping
+  const columnOrder = [
+    'timeStart', // First column to exclude from tab
+    'steamPressure',
+    'steamFlow',
+    'steamTemperature',
+    'elMeter',
+    'stackTemperature',
+    'feedWaterTemperature',
+    'feedWaterMeterReading',
+    'fuelPumpPr',
+    'fuelPumpRtPr',
+    'filterNumber',
+    'feedWaterPr',
+    'feedWaterPh',
+    'feedWaterTds',
+    'blowDownPh',
+    'blowDownTds',
+  ];
+
+  const columnIndexMap: { [key: string]: number } = {};
+  columnOrder.forEach((col, index) => {
+    columnIndexMap[col] = index;
+  });
+
+  // Initialize data when steamParameters prop changes
+  useEffect(() => {
+    setData(steamParameters);
+    setModifiedRows({});
+    setCellErrors({});
+  }, [steamParameters]);
+
+  // Input validation
+  const validateInput = useCallback((field: string, value: any): string | null => {
+    if (value === '' || value === null || value === undefined) {
+      return 'Field cannot be empty';
+    }
+
+    switch (field) {
+      case 'timeStart':
+      case 'timeEnd':
+        if (!/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/.test(value)) {
+          return 'Invalid time format';
+        }
+        break;
+      case 'steamPressure':
+      case 'steamFlow':
+      case 'steamTemperature':
+        if (isNaN(value) || value < 0) {
+          return 'Must be a positive number';
+        }
+        break;
+      default:
+        if (typeof value === 'number' && (isNaN(value) || value < 0)) {
+          return 'Must be a positive number';
+        }
+    }
+    return null;
+  }, []);
+
+  // Helper function to create column definitions with tabindex
+  const createColumn = useCallback(
+    (
+      accessorKey: keyof SteamParametersBasic,
+      header: string,
+      type: 'text' | 'number' | 'time' = 'text',
+      editable: boolean = true
+    ): ColumnDef<SteamParametersBasic, any> => ({
+      accessorKey,
+      header,
+      cell: ({ getValue, row, column }) => {
+        const cellKey = `${row.original.id}-${column.id}`;
+        const hasError = cellErrors[cellKey];
+        
+        // Determine if the current column is the first column
+        const isFirstColumn = accessorKey === FIRST_COLUMN_KEY;
+
+        // Calculate tabindex only for non-first columns
+        let tabindex: number | undefined = undefined;
+        if (!isFirstColumn) {
+          const rowIndex = row.index; // Zero-based row index
+          const colIndex = columnIndexMap[accessorKey as string]; // Zero-based column index
+          // Adjust colIndex by subtracting 1 to account for excluded first column
+          const adjustedColIndex = colIndex - 1;
+          tabindex = rowIndex * TAB_COLUMNS + adjustedColIndex + 1; // Sequential tabindex starting from 1
+        }
+
+        const handleBlur = () => {
+          // Defer state updates to allow browser to handle focus transition
+          setTimeout(() => {
+            const input = inputRefs.current[tabindex || 0];
+            if (input) {
+              const value =
+                type === 'number'
+                  ? input.value === ''
+                    ? ''
+                    : parseFloat(input.value)
+                  : input.value;
+
+              const error = validateInput(column.id as keyof SteamParametersUpdate, value);
+              if (error) {
+                setCellErrors((prev) => ({ ...prev, [cellKey]: error }));
+              } else {
+                setCellErrors((prev) => {
+                  const newErrors = { ...prev };
+                  delete newErrors[cellKey];
+                  return newErrors;
+                });
+
+                // Update modifiedRows
+                setModifiedRows((prev) => {
+                  const existing = prev[row.original.id] || { id: row.original.id };
+                  const updated = { ...existing, [column.id as keyof SteamParametersUpdate]: value };
+                  return { ...prev, [row.original.id]: updated };
+                });
+
+                // Update data
+                setData((prevData) =>
+                  prevData.map((r) => (r.id === row.original.id ? { ...r, [column.id]: value } : r))
+                );
+              }
+
+              // If Tab was pressed, move focus to the next input
+              if (isTabPressed.current && tabindex) {
+                const nextTabIndex = tabindex + 1;
+                const nextInput = inputRefs.current[nextTabIndex];
+                if (nextInput) {
+                  nextInput.focus();
+                }
+                isTabPressed.current = false; // Reset the flag
+              }
+            }
+          }, 0);
+        };
+
+        const handleKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
+          if (event.key === 'Tab') {
+            isTabPressed.current = true;
+          }
+        };
+
+        return (
+          <div className="relative">
+            {isFirstColumn ? (
+              // For the first column, make the input non-tabbable
+              <input
+                type={type}
+                defaultValue={getValue() as string | number}
+                onBlur={handleBlur}
+                onKeyDown={handleKeyDown}
+                ref={(el) => {
+                  // Optionally store ref if needed
+                }}
+                className={`w-full p-1 border rounded-md ${
+                  hasError ? 'border-red-500' : 'border-gray-300'
+                } focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                  editable ? '' : 'bg-gray-100 cursor-not-allowed'
+                }`}
+                aria-label={header}
+                aria-invalid={hasError ? 'true' : 'false'}
+                readOnly={!editable}
+                tabIndex={-1} // Exclude from tab navigation
+              />
+            ) : (
+              // For other columns, assign calculated tabindex and store ref
+              <input
+                type={type}
+                defaultValue={getValue() as string | number}
+                onBlur={handleBlur}
+                onKeyDown={handleKeyDown}
+                ref={(el) => {
+                  if (tabindex) {
+                    inputRefs.current[tabindex] = el;
+                  }
+                }}
+                className={`w-full p-1 border rounded-md ${
+                  hasError ? 'border-red-500' : 'border-gray-300'
+                } focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                  editable ? '' : 'bg-gray-100 cursor-not-allowed'
+                }`}
+                aria-label={header}
+                aria-invalid={hasError ? 'true' : 'false'}
+                readOnly={!editable}
+                tabIndex={tabindex} // Assign tabindex only for non-first columns
+              />
+            )}
+            {hasError && (
+              <div className="absolute bottom-full left-0 z-10 bg-red-100 text-red-600 text-xs p-1 rounded mb-1">
+                {cellErrors[cellKey]}
+              </div>
+            )}
+          </div>
+        );
+      },
+    }),
+    [cellErrors, validateInput, columnIndexMap, TAB_COLUMNS]
+  );
+
+  // Define all columns using the helper function
+  const columns = useMemo<ColumnDef<SteamParametersBasic, any>[]>(() => [
+    createColumn('timeStart', 'Time Start', 'time', false), // First column to exclude from tab
+    createColumn('steamPressure', 'Steam Pressure', 'number'),
+    createColumn('steamFlow', 'Steam Flow', 'number'),
+    createColumn('steamTemperature', 'Steam Temperature', 'number'),
+    createColumn('elMeter', 'E/L Meter', 'number'),
+    createColumn('stackTemperature', 'Stack Temperature', 'number'),
+    createColumn('feedWaterTemperature', 'Feed Water Temperature', 'number'),
+    createColumn('feedWaterMeterReading', 'Feed Water Meter Reading', 'number'),
+    createColumn('fuelPumpPr', 'Fuel Pump PR', 'number'),
+    createColumn('fuelPumpRtPr', 'Fuel Pump RT PR', 'number'),
+    createColumn('filterNumber', 'Filter Number', 'number'),
+    createColumn('feedWaterPr', 'Feed Water PR', 'number'),
+    createColumn('feedWaterPh', 'Feed Water pH', 'number'),
+    createColumn('feedWaterTds', 'Feed Water TDS', 'number'),
+    createColumn('blowDownPh', 'Blow Down pH', 'number'),
+    createColumn('blowDownTds', 'Blow Down TDS', 'number'),
+  ], [createColumn]);
+
+  // Initialize table instance
   const table = useReactTable({
     data,
     columns,
+    getCoreRowModel: getCoreRowModel(),
+    getSortedRowModel: getSortedRowModel(),
+    getPaginationRowModel: getPaginationRowModel(),
     state: {
       sorting,
       pagination,
     },
     onSortingChange: setSorting,
     onPaginationChange: setPagination,
-    getCoreRowModel: getCoreRowModel(),
-    getSortedRowModel: getSortedRowModel(),
-    getPaginationRowModel: getPaginationRowModel(),
-    initialState: {
-      sorting: [
-        {
-          id: 'createdAt',
-          desc: false, // ascending order
-        },
-      ],
-    },
+    manualPagination: false,
   });
 
-  // Handler for input changes in the new entry form
-  const handleInputChange = (
-    e: React.ChangeEvent<HTMLInputElement>,
-    field: keyof SteamParameters
-  ) => {
-    const value = e.target.value;
-    setNewEntry((prev) => ({
-      ...prev,
-      [field]:
-        e.target.type === 'number' && value !== ''
-          ? parseFloat(value)
-          : value || undefined,
-    }));
-  };
+  // Prepare updates for bulk submission
+  const prepareUpdates = useCallback((): SteamParametersUpdate[] => {
+    return Object.values(modifiedRows);
+  }, [modifiedRows]);
 
-  // Handler for submitting the new entry
-  const handleSubmit = () => {
-    // Validation: ensure required fields are present
-    // Adjust based on which fields are required
-    if (!newEntry.timeStart || newEntry.steamPressure === undefined) {
-      toast.error('Please enter required fields.');
+  // Handle bulk submission
+  const handleSubmit = useCallback(async () => {
+    if (Object.keys(cellErrors).length > 0) {
+      toast.error('Please fix all errors before submitting.');
       return;
     }
 
-    // Prepare data to send to backend
-    const entryData: Partial<SteamParameters> = {
-      ...newEntry,
-    };
+    const updates = prepareUpdates();
+    if (updates.length === 0) {
+      toast.info('No changes to submit.');
+      return;
+    }
 
-    onAdd(entryData);
-
-    // Reset form with plantId and shiftScheduleId retained
-    setNewEntry({
-      plantId: plant.plantId,
-      shiftScheduleId: activeShift.id,
-      timeStart: '',
-      timeEnd: '',
-      steamPressure: undefined,
-      steamFlow: undefined,
-      steamTemperature: undefined,
-      elMeter: undefined,
-      stackTemperature: undefined,
-      feedWaterTemperature: undefined,
-      feedWaterMeterReading: undefined,
-      fuelPumpPr: undefined,
-      fuelPumpRtPr: undefined,
-      filterNumber: undefined,
-      feedWaterPr: undefined,
-      feedWaterPh: undefined,
-      feedWaterTds: undefined,
-      blowDownPh: undefined,
-      blowDownTds: undefined,
-    });
-  };
+    setIsSubmitting(true);
+    try {
+      await onBulkUpdate(updates);
+      // Reset modified rows and cell errors upon successful submission
+      setModifiedRows({});
+      setCellErrors({});
+      toast.success('Updates submitted successfully.');
+    } catch (error) {
+      console.error('Error submitting updates:', error);
+      toast.error('Failed to submit updates.');
+    } finally {
+      setIsSubmitting(false);
+    }
+  }, [cellErrors, prepareUpdates, onBulkUpdate]);
 
   return (
-    <div className="bg-white shadow-md rounded-lg p-6 text-slate-900">
-      <h2 className="text-xl font-semibold text-gray-700 mb-4 text-center">
-        Steam Parameters / स्टीम पैरामीटर
-      </h2>
+    <div
+      className={`bg-white shadow-md rounded-lg p-6 ${
+        Object.keys(modifiedRows).length > 0 ? 'border-2 border-blue-400' : ''
+      }`}
+      role="region"
+      aria-label="Steam Parameters Table"
+    >
       <div className="overflow-x-auto">
-        <table className="min-w-full border border-gray-300 text-slate-900">
+        <table className="min-w-full border border-gray-300">
           <thead className="bg-gray-100">
-            {table.getHeaderGroups().map((headerGroup) => (
+            {table.getHeaderGroups().map(headerGroup => (
               <tr key={headerGroup.id}>
-                {headerGroup.headers.map((header) => (
+                {headerGroup.headers.map(header => (
                   <th
                     key={header.id}
-                    className="px-4 py-2 border-b border-gray-300 text-left text-sm font-medium text-gray-700 cursor-pointer select-none whitespace-nowrap"
+                    className="px-4 py-2 border-b border-gray-300 text-left text-sm font-medium text-gray-700 cursor-pointer"
                     onClick={header.column.getToggleSortingHandler()}
                   >
-                    {header.isPlaceholder ? null : (
-                      <div className="flex items-center">
-                        {flexRender(
-                          header.column.columnDef.header,
-                          header.getContext()
-                        )}
-                        {{
-                          asc: ' 🔼',
-                          desc: ' 🔽',
-                        }[header.column.getIsSorted() as string] ?? null}
-                      </div>
-                    )}
+                    <div className="flex items-center space-x-1">
+                      {flexRender(header.column.columnDef.header, header.getContext())}
+                      {header.column.getIsSorted() && (
+                        <span className="inline-block w-4">
+                          {header.column.getIsSorted() === 'desc' ? '↓' : '↑'}
+                        </span>
+                      )}
+                    </div>
                   </th>
                 ))}
               </tr>
             ))}
           </thead>
           <tbody>
-            {table.getRowModel().rows.map((row) => (
+            {table.getRowModel().rows.map(row => (
               <tr key={row.id} className="hover:bg-gray-50">
-                {row.getVisibleCells().map((cell) => (
-                  <td
-                    key={cell.id}
-                    className="px-4 py-2 border-b border-gray-300 whitespace-nowrap"
-                  >
-                    {flexRender(
-                      cell.column.columnDef.cell,
-                      cell.getContext()
-                    )}
+                {row.getVisibleCells().map(cell => (
+                  <td key={cell.id} className="px-4 py-2 border-b border-gray-300">
+                    {flexRender(cell.column.columnDef.cell, cell.getContext())}
                   </td>
                 ))}
               </tr>
             ))}
-
-            {/* New Entry Form Row */}
-            {(table.getPageCount() === 0 ||
-              table.getState().pagination.pageIndex ===
-                table.getPageCount() - 1) && (
-              <tr className="bg-gray-50">
-                {/* Shift Title */}
-                <td className="px-4 py-2 border-b border-gray-300">
-                  <span>{activeShift.shiftTitle}</span>
-                </td>
-                {/* Date */}
-                <td className="px-4 py-2 border-b border-gray-300">
-                  <span>
-                    {format(new Date(activeShift.date), 'MM/dd/yyyy')}
-                  </span>
-                </td>
-                {/* Time Start */}
-                <td className="px-4 py-2 border-b border-gray-300">
-                  <input
-                    type="time"
-                    value={newEntry.timeStart || ''}
-                    onChange={(e) => handleInputChange(e, 'timeStart')}
-                    className="w-full p-1 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    placeholder="Time Start"
-                  />
-                </td>
-                {/* Time End */}
-                <td className="px-4 py-2 border-b border-gray-300">
-                  <input
-                    type="time"
-                    value={newEntry.timeEnd || ''}
-                    onChange={(e) => handleInputChange(e, 'timeEnd')}
-                    className="w-full p-1 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    placeholder="Time End"
-                  />
-                </td>
-                {/* Steam Pressure */}
-                <td className="px-4 py-2 border-b border-gray-300">
-                  <input
-                    type="number"
-                    value={newEntry.steamPressure ?? ''}
-                    onChange={(e) => handleInputChange(e, 'steamPressure')}
-                    className="w-full p-1 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    placeholder="Steam Pressure"
-                  />
-                </td>
-                {/* Steam Flow */}
-                <td className="px-4 py-2 border-b border-gray-300">
-                  <input
-                    type="number"
-                    value={newEntry.steamFlow ?? ''}
-                    onChange={(e) => handleInputChange(e, 'steamFlow')}
-                    className="w-full p-1 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    placeholder="Steam Flow"
-                  />
-                </td>
-                {/* Steam Temperature */}
-                <td className="px-4 py-2 border-b border-gray-300">
-                  <input
-                    type="number"
-                    value={newEntry.steamTemperature ?? ''}
-                    onChange={(e) => handleInputChange(e, 'steamTemperature')}
-                    className="w-full p-1 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    placeholder="Steam Temperature"
-                  />
-                </td>
-                {/* E/L Meter */}
-                <td className="px-4 py-2 border-b border-gray-300">
-                  <input
-                    type="number"
-                    value={newEntry.elMeter ?? ''}
-                    onChange={(e) => handleInputChange(e, 'elMeter')}
-                    className="w-full p-1 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    placeholder="E/L Meter"
-                  />
-                </td>
-                {/* Stack Temperature */}
-                <td className="px-4 py-2 border-b border-gray-300">
-                  <input
-                    type="number"
-                    value={newEntry.stackTemperature ?? ''}
-                    onChange={(e) => handleInputChange(e, 'stackTemperature')}
-                    className="w-full p-1 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    placeholder="Stack Temperature"
-                  />
-                </td>
-                {/* Feed Water Temperature */}
-                <td className="px-4 py-2 border-b border-gray-300">
-                  <input
-                    type="number"
-                    value={newEntry.feedWaterTemperature ?? ''}
-                    onChange={(e) =>
-                      handleInputChange(e, 'feedWaterTemperature')
-                    }
-                    className="w-full p-1 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    placeholder="Feed Water Temperature"
-                  />
-                </td>
-                {/* Feed Water Meter Reading */}
-                <td className="px-4 py-2 border-b border-gray-300">
-                  <input
-                    type="number"
-                    value={newEntry.feedWaterMeterReading ?? ''}
-                    onChange={(e) =>
-                      handleInputChange(e, 'feedWaterMeterReading')
-                    }
-                    className="w-full p-1 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    placeholder="Feed Water Meter Reading"
-                  />
-                </td>
-                {/* Fuel Pump Pr */}
-                <td className="px-4 py-2 border-b border-gray-300">
-                  <input
-                    type="number"
-                    value={newEntry.fuelPumpPr ?? ''}
-                    onChange={(e) => handleInputChange(e, 'fuelPumpPr')}
-                    className="w-full p-1 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    placeholder="Fuel Pump Pr"
-                  />
-                </td>
-                {/* Fuel Pump RT Pr */}
-                <td className="px-4 py-2 border-b border-gray-300">
-                  <input
-                    type="number"
-                    value={newEntry.fuelPumpRtPr ?? ''}
-                    onChange={(e) => handleInputChange(e, 'fuelPumpRtPr')}
-                    className="w-full p-1 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    placeholder="Fuel Pump RT Pr"
-                  />
-                </td>
-                {/* Filter Number */}
-                <td className="px-4 py-2 border-b border-gray-300">
-                  <input
-                    type="number"
-                    value={newEntry.filterNumber ?? ''}
-                    onChange={(e) => handleInputChange(e, 'filterNumber')}
-                    className="w-full p-1 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    placeholder="Filter Number"
-                  />
-                </td>
-                {/* Feed Water Pr */}
-                <td className="px-4 py-2 border-b border-gray-300">
-                  <input
-                    type="number"
-                    value={newEntry.feedWaterPr ?? ''}
-                    onChange={(e) => handleInputChange(e, 'feedWaterPr')}
-                    className="w-full p-1 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    placeholder="Feed Water Pr"
-                  />
-                </td>
-                {/* Feed Water pH */}
-                <td className="px-4 py-2 border-b border-gray-300">
-                  <input
-                    type="number"
-                    value={newEntry.feedWaterPh ?? ''}
-                    onChange={(e) => handleInputChange(e, 'feedWaterPh')}
-                    className="w-full p-1 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    placeholder="Feed Water pH"
-                  />
-                </td>
-                {/* Feed Water TDS */}
-                <td className="px-4 py-2 border-b border-gray-300">
-                  <input
-                    type="number"
-                    value={newEntry.feedWaterTds ?? ''}
-                    onChange={(e) => handleInputChange(e, 'feedWaterTds')}
-                    className="w-full p-1 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    placeholder="Feed Water TDS"
-                  />
-                </td>
-                {/* Blow Down pH */}
-                <td className="px-4 py-2 border-b border-gray-300">
-                  <input
-                    type="number"
-                    value={newEntry.blowDownPh ?? ''}
-                    onChange={(e) => handleInputChange(e, 'blowDownPh')}
-                    className="w-full p-1 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    placeholder="Blow Down pH"
-                  />
-                </td>
-                {/* Blow Down TDS */}
-                <td className="px-4 py-2 border-b border-gray-300">
-                  <input
-                    type="number"
-                    value={newEntry.blowDownTds ?? ''}
-                    onChange={(e) => handleInputChange(e, 'blowDownTds')}
-                    className="w-full p-1 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    placeholder="Blow Down TDS"
-                  />
+            {data.length === 0 && (
+              <tr>
+                <td colSpan={columns.length} className="px-4 py-8 text-center text-gray-500">
+                  No Steam Parameters found for the selected date.
                 </td>
               </tr>
             )}
@@ -513,87 +369,67 @@ const SteamParametersTable: React.FC<SteamParametersTableProps> = ({
 
       {/* Pagination Controls */}
       <div className="flex justify-between items-center mt-4">
-        <div className="flex items-center">
+        <div className="flex items-center space-x-2">
           <button
-            className="px-2 py-1 border rounded"
-            onClick={() => table.setPageIndex(0)}
-            disabled={!table.getCanPreviousPage()}
-          >
-            {'<<'}
-          </button>
-          <button
-            className="px-2 py-1 border rounded ml-1"
             onClick={() => table.previousPage()}
             disabled={!table.getCanPreviousPage()}
+            className="px-3 py-1 border rounded-md disabled:opacity-50 disabled:cursor-not-allowed"
+            aria-label="Previous page"
           >
-            {'<'}
+            ←
           </button>
-          <span className="ml-2">
-            Page{' '}
-            <strong>
-              {table.getState().pagination.pageIndex + 1} of{' '}
-              {table.getPageCount()}
-            </strong>
-          </span>
           <button
-            className="px-2 py-1 border rounded ml-1"
             onClick={() => table.nextPage()}
             disabled={!table.getCanNextPage()}
+            className="px-3 py-1 border rounded-md disabled:opacity-50 disabled:cursor-not-allowed"
+            aria-label="Next page"
           >
-            {'>'}
+            →
           </button>
-          <button
-            className="px-2 py-1 border rounded ml-1"
-            onClick={() =>
-              table.setPageIndex(table.getPageCount() - 1)
-            }
-            disabled={!table.getCanNextPage()}
-          >
-            {'>>'}
-          </button>
-        </div>
-        <div>
-          <span>
-            Go to page:{' '}
-            <input
-              type="number"
-              defaultValue={table.getState().pagination.pageIndex + 1}
-              onChange={(e) => {
-                const page = e.target.value
-                  ? Number(e.target.value) - 1
-                  : 0;
-                table.setPageIndex(page);
-              }}
-              className="border p-1 rounded w-16"
-            />
+          <span className="text-sm">
+            Page <strong>{pagination.pageIndex + 1}</strong> of{' '}
+            <strong>{table.getPageCount()}</strong>
           </span>
-          <select
-            value={table.getState().pagination.pageSize}
-            onChange={(e) => {
-              table.setPageSize(Number(e.target.value));
-            }}
-            className="ml-2 border p-1 rounded"
-          >
-            {[5, 10, 20, 50].map((pageSizeOption) => (
-              <option key={pageSizeOption} value={pageSizeOption}>
-                Show {pageSizeOption}
-              </option>
-            ))}
-          </select>
         </div>
+        <select
+          value={pagination.pageSize}
+          onChange={(e) => table.setPageSize(Number(e.target.value))}
+          className="border p-1 rounded"
+          aria-label="Rows per page"
+        >
+          {[5, 10, 20, 24].map(pageSize => (
+            <option key={pageSize} value={pageSize}>
+              Show {pageSize}
+            </option>
+          ))}
+        </select>
       </div>
 
       {/* Submit Button */}
       <div className="flex justify-end mt-4">
         <button
           onClick={handleSubmit}
-          className="px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 transition-colors duration-200"
+          disabled={
+            loading ||
+            Object.keys(modifiedRows).length === 0 ||
+            isSubmitting ||
+            Object.keys(cellErrors).length > 0
+          }
+          className={`px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 transition-colors
+            ${
+              loading ||
+              Object.keys(modifiedRows).length === 0 ||
+              isSubmitting ||
+              Object.keys(cellErrors).length > 0
+                ? 'opacity-50 cursor-not-allowed'
+                : ''
+            }`}
         >
-          Submit / जोड़ें
+          {isSubmitting ? 'Submitting...' : 'Submit Bulk Update'}
         </button>
       </div>
     </div>
   );
 };
 
-export default SteamParametersTable;
+export default React.memo(SteamParametersTable);

@@ -44,84 +44,38 @@ export default function AddShiftPostingModal({
       toast.error('No plant selected');
       return;
     }
-
+  
     setLoading(true);
-
+  
     const dateString = format(selectedDate, 'yyyy-MM-dd');
-
-    const startTimesMap = {
-      [ShiftTitle.A]: '06:00:00',
-      [ShiftTitle.B]: '14:00:00',
-      [ShiftTitle.C]: '22:00:00',
+  
+    const payload = {
+      plantId: selectedPlant.plantId,
+      date: dateString,
     };
-
-    const endTimesMap = {
-      [ShiftTitle.A]: '14:00:00',
-      [ShiftTitle.B]: '22:00:00',
-      [ShiftTitle.C]: '06:00:00', // Next day
-    };
-
+  
     try {
-      // Fetch existing shift schedules for the selected date
-      const existingSchedulesResponse = await api.get('/shift/schedules', {
+      // Make a single API call to the batch endpoint
+      const response = await api.post('/shift/schedules/batch', payload);
+      const { message, shifts: createdShifts, existingShifts } = response.data;
+  
+      // Optionally, you can display the message to the user
+      toast.success(message);
+  
+      // Fetch all shift schedules for the date and plant to ensure frontend state is up-to-date
+      const allShiftsResponse = await api.get('/shift/schedules', {
         params: {
           date: dateString,
           plantId: selectedPlant.plantId,
         },
       });
-
-      const existingSchedules: ShiftSchedule[] = existingSchedulesResponse.data;
-
-      // Map existing shift titles for easy lookup
-      const existingShiftTitles = new Set(
-        existingSchedules.map((schedule) => schedule.shiftTitle)
-      );
-
-      const shifts = [ShiftTitle.A, ShiftTitle.B, ShiftTitle.C];
-      const createdSchedules: ShiftSchedule[] = [...existingSchedules];
-
-      // Iterate over each shift and create if it doesn't exist
-      for (const shiftTitle of shifts) {
-        if (!existingShiftTitles.has(shiftTitle)) {
-          const payload = {
-            shiftTitle: shiftTitle,
-            date: dateString,
-            startTime: startTimesMap[shiftTitle],
-            endTime: endTimesMap[shiftTitle],
-            plantId: selectedPlant.plantId,
-          };
-
-          try {
-            const response = await api.post('/shift/schedules', payload);
-            createdSchedules.push(response.data);
-          } catch (error: any) {
-            if (
-              error.response &&
-              error.response.status === 400 &&
-              error.response.data.message.includes('already exists')
-            ) {
-              // Shift already exists, fetch it
-              const existingShiftResponse = await api.get('/shift/schedules', {
-                params: {
-                  date: dateString,
-                  shiftTitle: shiftTitle,
-                  plantId: selectedPlant.plantId,
-                },
-              });
-              createdSchedules.push(existingShiftResponse.data);
-            } else {
-              // Other errors
-              throw error;
-            }
-          }
-        }
-      }
-
-      setShiftSchedules(createdSchedules);
-
+  
+      const allShifts: ShiftSchedule[] = allShiftsResponse.data;
+      setShiftSchedules(allShifts);
+  
       // Fetch staff associated with the selected plant
       await fetchStaff();
-
+  
       setStep(2); // Proceed to staff assignment step
     } catch (error: any) {
       console.error('Error handling shift schedules:', error);
@@ -144,7 +98,7 @@ export default function AddShiftPostingModal({
     }
 
     try {
-      const response = await api.get(`/plants/${selectedPlant.plantId}`);
+      const response = await api.get(`/plants/${selectedPlant.plantId}?include=users`);
       const plantData = response.data;
       const users = plantData.users || [];
       // Filter users with role 'Staff'

@@ -24,7 +24,6 @@ import path from 'path';
 
 const navItems = [
   { name: 'Dashboard', path: '/dashboard/plant', icon: HomeIcon },
-  { name: 'Layout', path: '/dashboard/reports', icon: ChartBarIcon },
   {
     name: 'Log Books',
     icon: ClipboardDocumentListIcon,
